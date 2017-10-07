@@ -1,0 +1,54 @@
+.bbs_country_container{
+  position: relative;
+  border: 1px solid #19F83C;
+  padding : 0;
+}
+
+.bbs_country_container textarea.write_box{
+    width : 100%;
+    padding : 0px;
+    height : 5em;
+}
+
+.bbs_country_container .article_window{
+    padding-top : 2em;
+}
+
+.bbs_country_container .article{
+    margin-bottom : 1em;
+
+}
+.bbs_country_container img{
+    display : inline-block;
+    vertical-align : bottom;
+    margin-left : 1%;
+    margin-bottom : 0px;
+    margin-top :  0px;
+
+}
+
+.bbs_country_container p.message{
+    display : inline-block;
+    width : 98%;
+    border: 1px solid #19283C;
+    overflow : auto;
+    word-wrap : break-word;
+    padding : 0px;
+    margin-left: 1%;
+    margin-right: 0%;
+    margin-top: 1em;
+}
+
+.bbs_country_container p.date{
+    display : inline-block;
+    margin-left: 2em;
+    margin-top : 0px;
+    margin-bottom : 0px;
+}
+
+.bbs_country_container p.name{
+    display : inline-block;
+    margin-left : 1em;
+    margin-top : 0px;
+    margin-bottom : 0px;
+}

@@ -1,0 +1,8 @@
+[soldiers]
+id // primary-key
+name // varchar
+country_id
+owner_id //user_id
+type int
+quantity int
+level int

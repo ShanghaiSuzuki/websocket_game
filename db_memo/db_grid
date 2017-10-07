@@ -1,0 +1,9 @@
+[hex_grid]
+serial // INT( primary-key
+col // INT
+row // INT
+type // INT
+country_id // INT
+visibility // BYTE
+height // BYTE
+is_empty // BYTE プレイヤーの滞在有無

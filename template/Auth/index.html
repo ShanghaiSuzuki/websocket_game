@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,
+                                  minimum-scale=1.0,maximum-scale=1.0,
+                                  user-scalable=no">
+    <title>test</title>
+    <script src="//code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="//code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/mathjs/3.9.2/math.min.js"></script>
+
+    <script src="static/orbitlist/orbitlist.js"></script>
+    <link rel="stylesheet" href="static/orbitlist/orbitlist.css">
+    <link rel="stylesheet" href="static/orbitlist/style.css?var=2">
+
+    <script src="https://code.createjs.com/createjs-2015.11.26.min.js"></script>
+
+    <script src="static/Remodal-1.1.1/remodal.min.js"></script>
+    <link rel="stylesheet" href="static/Remodal-1.1.1/remodal.css">
+    <link rel="stylesheet" href="static/Remodal-1.1.1/remodal-default-theme.css">
+
+    <script src="static/hexgrid/BJSocket.js?var=1.1120d1111"></script>
+    <script src="static/hexgrid/BBSCountry.js?var=43dddddf1"></script>
+    <script src="static/hexgrid/HexGridMessage.js?var=43dddddf1"></script>
+    <script src="static/hexgrid/Hex.js?var=119yddd110ddjjdd1"></script>
+    <script src="static/hexgrid/HexGridMenu.js?var=aj1"></script>
+    <script src="static/hexgrid/HexGrid.js?var=1k1ddj1d2dd23123811"></script>
+    <link rel="stylesheet" href="static/hexgrid/HexGrid.css?var=2">
+
+    <script src="static/responsive-tabs/jquery.responsiveTabs.min.js"></script>
+    <link rel="stylesheet" href="static/responsive-tabs/responsive-tabs.css"/>
+    <link rel="stylesheet" href="static/responsive-tabs/style.css?var=1" />
+
+
+</head>
+<body>
+
+
+<div id="responsiveTabs">
+    <ul>
+        <li><a href="#tab-1">マップ</a></li>
+        <li><a href="#tab-2">ログ</a></li>
+        <li><a href="#tab-3">会議室</a></li>
+    </ul>
+
+    <div id="tab-1">
+        <div id="hexgrid_container" class="hexgrid_container">
+                <canvas id="field" class="field"></canvas>
+                <ul class="orbit" id="orbit">
+                    <li id="war">戦争
+                        <ul>
+                            <li id="move">進軍</li>
+                        </ul>
+                    </li>
+                    <li id="pol">内政</li>
+                    <li id="mil">軍事</li>
+
+                </ul>
+            </div> </div>
+    <div id="tab-2">
+        <textarea cols="100" rows="10" disabled wrap="hard" id="text_box"></textarea>
+    </div>
+    <div id="tab-3"></div>
+</div>
+<form action="/logout" method="post">
+    {% module xsrf_form_html() %}
+    username = {{escape(username)}}
+    <input type="submit" value="Logout"/>
+</form>
+
+<div data-remodal-id="modal">
+  <h1 id="modal_title"></h1>
+  <p id="modal_message">
+  </p>
+    <br>
+    <button data-remodal-action="confirm" class="remodal-confirm" id="remodal_ok_button">OK</button>
+    <button data-remodal-action="cancel" class="remodal-cancel" id="remodal_cancel_button">Cancel</button>
+</div>
+
+<script>
+$(document).ready(function() {
+
+    $('#responsiveTabs').responsiveTabs({
+        startCollapsed: 'accordion'
+    });
+
+});
+</script>
+
+</body>
+</html>

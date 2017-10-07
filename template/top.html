@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width">
+    <title>TOP</title>
+
+    <script src="//code.jquery.com/jquery-2.2.4.min.js"></script>
+    <script src="static/responsive-tabs/jquery.responsiveTabs.min.js"></script>
+    <link rel="stylesheet" href="static/responsive-tabs/responsive-tabs.css"/>
+    <link rel="stylesheet" href="static/responsive-tabs/style.css" />
+    <link rel="stylesheet" href="static/orbitlist/style.css?var=2">
+</head>
+<body>
+
+テスト鯖
+<form action="/login" method="get">
+    {% module xsrf_form_html() %}
+    <input type="submit" value="ログイン"/>
+</form>
+
+<form action="/register" method="get">
+    {% module xsrf_form_html() %}
+    <input type="submit" value="新規登録"/>
+</form>
+
+
+
+
+
+
+</body>
+</html>

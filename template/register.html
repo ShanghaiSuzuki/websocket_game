@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width">
+    <title>新規登録</title>
+</head>
+<body>
+    臨時キャラ作成
+    <form action="register" method="post">
+      {% module xsrf_form_html() %}
+      <p>ユーザー名（全角７文字以内） : <input type="text" name="username"/></p>
+      <p>パスワード（４桁）: <input type="password" name="userpass"/></p>
+        <p>
+            国選択
+            <select name="country">
+                <option value=0>アメリカ</option>
+                <option value=1>ソ連</option>
+            </select>
+        </p>
+
+      <input type="submit" value="作成"/>
+    </form>
+</body>
+</html>

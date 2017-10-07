@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+{{escape(message)}}
+<form action="/" method="get">
+    {% module xsrf_form_html() %}
+    <input type="submit" value="TOP"/>
+</form>
+</body>
+</html>
