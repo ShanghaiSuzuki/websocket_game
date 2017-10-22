@@ -39,17 +39,15 @@ def init_hexgrid(_cls, _self, data):
         player= get_playerinfo_by_id(user_id)
         if not player:
             raise Exception("hex_grid上の自身のプレイヤー情報取得失敗")
-
+        print("p0")
         # 可視範囲の全プレイヤー取得
-        visible_players = get_players_by_visibility(player["visibility"])
-
+        visible_players = get_players_by_visibility(player["visibility"], True)
         # 自身の情報をペイロードに格納
         data["player_self"] = {"name" : player["user_name"],
                                  "col" : player["col"],
                                  "row" : player["row"],
                                  "icon" : player["icon_id"],
                                  "country" : player["country_id"]}
-
         # 可視範囲の全プレイヤーの情報をペイロードに格納
         payload_players = []
         for visible_player in visible_players:
@@ -59,7 +57,7 @@ def init_hexgrid(_cls, _self, data):
                                     visible_player["icon_id"],
                                     visible_player["country_id"]])
 
-        data["players"] = payload_players
+        data["new_players"] = payload_players
 
         # 可視範囲のヘックスの情報
         visible_area = get_visible_area(player["visibility"])

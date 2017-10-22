@@ -2,7 +2,7 @@ from lib.DB.DBSingleton import DBSingleton, DBError
 from lib.TornadoHandlers.BJSocketHandler import BJSocketHandler
 from lib.DB import event_controller, player_controller, hexgrid_controller, division_controller
 from lib.util import BJTime
-from lib.TornadoHandlers.BJSocketHandler import update_hexgrid
+from lib.TornadoHandlers.BJSocketHandler import notify_move_player
 from datetime import datetime
 import logging
 
@@ -24,7 +24,7 @@ class EventMove():
     def run(self):
         """
         プレイヤーを移動させる
-        終了後はupdate_hexgridイベントを送信する
+        終了後はmove_playerイベントを送信する
         :return: 成功 ? True : False
         """
 
@@ -40,6 +40,12 @@ class EventMove():
 
             # プレイヤー情報
             player = player_controller.get_playerinfo_by_id(self._user_id)
+            moving_player_info = { "id" : player["user_id"],
+                                   "ex_col" : player["col"],
+                                   "ex_row" : player["row"],
+                                   "new_col" : self._dest_col,
+                                   "new_row" : self._dest_row,
+                                   "icon" : player["icon"]}
 
             # 移動中でないならキャンセル(本来はイベントレコード自体がキャンセルされるべき
             if player["status"] != "moving":
@@ -85,9 +91,8 @@ class EventMove():
                 raise Exception("移動後の可視領域可算に失敗")
 
 
-            # 可視範囲を共有する通信中のプレイヤー(移動するプレイヤーも含む）にヘックスグリッドのアップデートを通知
-            # TODO : 影響する他国も
-            update_hexgrid.notify_update_hexgrid(player["visibility"], now)
+            # 可視範囲を共有する通信中のプレイヤー(移動するプレイヤーも含む）にプレイヤーの移動を通知
+            notify_move_player.notify_update_hexgrid(moving_player_info, player["visibility"], now)
 
         except DBError as e:
             logging.error("EventMove::run: caught DBError: " + e.message)

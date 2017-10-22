@@ -10,12 +10,12 @@ function HexGrid(socket) {
 
 	print("HexGrid: in constructor : ver 0.11");
 
-	//canvasとコンテキストを初期化
-	this.canvas = document.getElementById("field");
-	this.context = this.canvas.getContext("2d");
-
-	this.canvas.width = $("#field").width();
-	this.canvas.height = $("#field").height();
+    // CSSで伸ばしたcanvasはcanvasを引き延ばしただけなので、その高さと幅をDOMのcanvasに再設定する
+	this.canvas_width = $("#field").width();
+	this.canvas_height = $("#field").height();
+    var canvas = document.getElementById("field");
+    canvas.width = this.canvas_width;
+    canvas.height = this.canvas_height;
 
 	//canvas上のプレイヤー
 	this.players = {};
@@ -23,11 +23,7 @@ function HexGrid(socket) {
 	//自身の情報
 	this._self_info = [];
 
-    //描写設定
-    this._fps = 1000/30; //30fps
-    this._last_time_rendered = 0;
-
-	//辺の長さ
+	// 辺の長さ
 	this.length = undefined;
 
 	//ヘックス描写に使う数値を事前計算
@@ -54,13 +50,10 @@ function HexGrid(socket) {
 	this.zoom_max = 2;
 	this.zoom_min = 0.5;
 	this.translate = [0, 0];
+
 	//this.translate_min = [-width + this.canvas.width, -height + this.canvas.height];
 	this.translate_min = undefined
 	this.translate_max = [0, 0];
-
-	//イベントハンドラ内のパラメータの初期値
-	this.dragging = false;
-	this._ex_up_time= 0.0;
 
 	//ソケット
 	this.socket = socket;
@@ -76,20 +69,41 @@ function HexGrid(socket) {
 
 }
 
-//初期化:ヘックスグリッド作成
-HexGrid.prototype.init = function(data) {
 
-    //フィールドを定義する三つの変数
+HexGrid.prototype.init = function(data)
+{
+    //フィールドの広さを定義する三つの変数
 	this.width = data["width"];
 	this.height = data["height"];
 	this.length = data["length"];
 
-	//Hex描写に使う変数
-	this.half_len = this.length / 2;
-	this.delta_v = this.length * Math.sin(1 / 3 * Math.PI);
+	// スケーリングの初期値はヘックスが横に10個入るスケール
+	this.scale = this.canvas_width / this.width;
+
+    //　ステージにヘックスグリッドを追加
+    this.stage = new createjs.Stage("field");
+    this.world = new createjs.Container();
+    this.world.scaleX = this.scale;
+    this.world.scaleY = this.scale;
+    this.stage.addChild(this.world);
+
+    // ステージに＋-のスケールボタンを追加
+    var btn_radius = this.canvas_width * 0.03;
+    this.btn_minus_scale = new createjs.Shape();
+    this.btn_minus_scale.graphics.beginFill("Red").drawCircle(btn_radius, btn_radius, btn_radius);
+    this.btn_minus_scale.on("click", function(e){ e.stopPropagation(); this.func_scale(false);}, this);
+    this.btn_plus_scale = new createjs.Shape();
+    this.btn_plus_scale.graphics.beginFill("Blue").drawCircle(btn_radius, btn_radius*3, btn_radius);
+    this.btn_plus_scale.on("click", function(e){e.stopPropagation(); this.func_scale(true);}, this);
+    this.stage.addChild(this.btn_minus_scale);
+    this.stage.addChild(this.btn_plus_scale);
+
+	// ヘックスの大きさの定義
+	this.half_len = this.length / 2; // 正六角形の一辺の長さの半分
+	this.delta_v = this.length * Math.sin(1 / 3 * Math.PI); // 正六角形の高さの半分
 
 	//平行移動の制限
-	this.translate_min = [-this.width + this.canvas.width, -this.height + this.canvas.height];
+	this.translate_min = [-this.width + this.canvas_width, -this.height + this.canvas_height];
 
 	//ヘックスのオフセットと増分
 	var x_offset = this.length;
@@ -148,7 +162,8 @@ HexGrid.prototype.init = function(data) {
 			var i_col = math.round(i_vec.valueOf()[0]);
 			var i_row = math.round(i_vec.valueOf()[1]);
 
-			var hex = new Hex([g_col, g_row], x, y);
+            // CreateJSのShapeを生成してworldに登録
+			var hex = new Hex([g_col, g_row], x, y, this.stage, this.world, this.half_len*2);
 			this.hexagons[i_col][i_row] = hex;
 			y += delta_y * 2;
 		}
@@ -157,20 +172,6 @@ HexGrid.prototype.init = function(data) {
 		col++;
 
 	}
-
-	//イベントリスナーでキャッチするイベントを登録
-	//TODO: スマホ版とPC版でクラス分けする？
-	this.canvas.addEventListener("mousewheel", this, false);
-	this.canvas.addEventListener("mousedown", this, false);
-	this.canvas.addEventListener("mouseup", this, false);
-	this.canvas.addEventListener("mousemove", this, false);
-	this.canvas.addEventListener("mouseleave", this, false);
-	this.canvas.addEventListener("touchstart", this, false);
-	this.canvas.addEventListener("touchend", this, false);
-	this.canvas.addEventListener("touchmove", this, false);
-
-	//ハンドラ初期設定は通常のイベントハンドラで、メニュー等からフックされる
-    this.handleEvent = this.normal_event_handler;
 
     //自身の情報を設定
     this._self_info["name"] = data["name"];
@@ -182,312 +183,72 @@ HexGrid.prototype.init = function(data) {
     this.update(data);
 
     print("HexGrid初期化完了");
-    this.render();
-}
 
+
+}
 //ヘックスグリッドが更新された時のハンドラ
 HexGrid.prototype.update = function(data){
 
     print("in HexGrid.update");
+
+    // 移動したプレイヤーがいる場合
+    if ("moving_player" in data){
+        print("     moving_player exist")
+        ex_col = data["moving_player"]["ex_col"];
+        ex_row = data["moving_player"]["ex_row"];
+        this.hexagons[ex_col][ex_row].remove_player(data["moving_player"]["user_id"]);
+        new_col = data["moving_player"]["new_col"];
+        new_row = data["moving_player"]["new_row"];
+        this.hexagons[new_col][new_row].add_player(data["moving_player"]["user_id"]);
+    }
+
     //可視になった領域を読み込み
-    for(var i=0; i<data["visible_area"].length; i++){
-        var index = this._gridToIndex([data["visible_area"][i][0], data["visible_area"][i][1]]);
-        this.hexagons[index[0]][index[1]].change_type(data["visible_area"][i][2]);
-        this.hexagons[index[0]][index[1]].set_status(true);
+    if ("visible_area" in data){
+        print("     visible_area exist")
+        for(var i=0; i<data["visible_area"].length; i++){
+            var index = this._gridToIndex([data["visible_area"][i][0], data["visible_area"][i][1]]);
+            this.hexagons[index[0]][index[1]].change_type(data["visible_area"][i][2]);
+            this.hexagons[index[0]][index[1]].set_status(true);
+        }
     }
 
     //不可視になった領域を読み込み
-    for(var i=0; i<data["unvisible_area"].length; i++){
-        print("in update unvisible_area col");
-        var index = this._gridToIndex([data["unvisible_area"][i][0], data["unvisible_area"][i][1]]);
-        this.hexagons[index[0]][index[1]].change_type(data["unvisible_area"][i][2]);
-        this.hexagons[index[0]][index[1]].set_status(false);
+    if ("unvisible_area" in data){
+        print("     unvisible_area exist")
+        for(var i=0; i<data["unvisible_area"].length; i++){
+            var index = this._gridToIndex([data["unvisible_area"][i][0], data["unvisible_area"][i][1]]);
+            this.hexagons[index[0]][index[1]].change_type(data["unvisible_area"][i][2]);
+            this.hexagons[index[0]][index[1]].set_status(false);
+        }
     }
 
     // 新しく現れたプレイヤーを読み込み
-    for(var i=0; i<data["new_players"].length; i++){
-        var name = data["new_players"][i][0];
-        this.players[name] = {}
-        this.players[name]["name"] = name;
-        this.players[name]["index"] = this._gridToIndex([data["players"][i][1], data["players"][i][2]]);
-        this.players[name]["country"] = data["players"][i][4];
-        this.players[name]["icon"] = new Image();
-        this.players[name]["icon"].src = "static/resource/icon/" + data["players"][i][3] +".jpeg";
-        this.hexagons[this.players[name]["index"][0]][this.players[name]["index"][1]].add_player(name, this.players[name]);
-
-        //プレイヤーが自分自身だった場合情報を更新
-        if (name == this._self_info["name"]){
-            this._self_info["col"] = data["players"][i][0];
-            this._self_info["row"] = data["players"][i][1];
+    if ("new_players" in data){
+        print("     new_players exist")
+        for(var i=0; i<data["new_players"].length; i++){
+            var name = data["new_players"][i][0];
+            this.players[name] = {}
+            this.players[name]["name"] = name;
+            this.players[name]["index"] = this._gridToIndex([data["new_players"][i][1], data["new_players"][i][2]]);
+            this.players[name]["country"] = data["new_players"][i][4];
+            this.players[name]["icon"] = "static/resource/icon/" + data["new_players"][i][3] +".jpeg"
+            this.hexagons[this.players[name]["index"][0]][this.players[name]["index"][1]].add_player(this.players[name]);
         }
     }
 
     // 不可視になったプレイヤーを読み込み、削除
-    for(var i=0; i<data["removed_players"].length; i++){
-        name = data["removed_players"][i][0]
-        col = data["removed_players"][i][1];
-        row = data["removed_players"][i][2];
-        this.hexagons[col][row].remove_player(name);
-    }
-
-}
-
-//マウス・タッチイベントハンドラ
-HexGrid.prototype.normal_event_handler = function(e) {
-
-	//デフォルトのイベントハンドラを停止
-	e.preventDefault();
-	e.stopPropagation();
-
-	switch (e.type) {
-
-	  case ("mousewheel"):
-		 this._is_mouse_down = false;
-		 this._scaling(e);
-		 this.render();
-		 break;
-
-	  case ("mousedown"):
-		 this._onMouseDown(e);
-		 break;
-
-	  case ("mouseup"):
-		this._onMouseUp(e);
-		break;
-
-	  case ("mouseleave"):
-		this._is_mouse_down = false;
-		break;
-
-	  case ("mousemove"):
-		this._onMouseMove(e);
-		this.render();
-		break;
-
-	  case ("touchstart"):
-	    this._onTouchStart(e);
-	    break;
-
-	  case ("touchmove"):
-	    this._onTouchMove(e);
-	    this.render();
-	    break;
-
-	  case("touchend"):
-	    this._onTouchEnd(e);
-	    break;
-
-	}
-
-}
-
-HexGrid.prototype._onMouseDown= function(e) {
-
-    this._is_mouse_down = true;
-
-    this._mouse_down_pos = [e.clientX, e.clientY];
-}
-
-HexGrid.prototype._onMouseUp = function(e){
-
-    this._is_mouse_down = false;
-
-    //onMouseMoveで使われる移動前の座標の再初期化
-    this.ex_pos = undefined;
-
-    //マウスアップ時の時刻
-    var up_time = new Date().getTime();
-
-    //ダブルクリック判定
-    if((up_time - this._ex_up_time) < 300){
-        clearTimeout(this._timer_single_click);
-        this._onDoubleClick(e);
-        return;
-    }
-    this._ex_up_time = up_time;
-
-    //シングルクリック判定
-    //setTimeoutでダブルクリック判定を待つ
-    this._timer_single_click = setTimeout(function(e){
-        var x = this._mouse_down_pos[0] - e.clientX;
-        var y = this._mouse_down_pos[1] - e.clientY;
-        x = x * x;
-        y = y * y;
-        //mouse downとup時の距離がヘックスの一辺より短ければシングルクリック
-        //計算量削減のため距離の計算はルートを取らず、一辺の長さを二乗して行う
-        if(this.length * this.length > (x + y)){
-            hex_grid_menu.toggle_menu();
+    if ("removed_players" in data){
+        print("     removed_player exist")
+        for(var i=0; i<data["removed_players"].length; i++){
+            name = data["removed_players"][i][0]
+            col = data["removed_players"][i][1];
+            row = data["removed_players"][i][2];
+            this.hexagons[col][row].remove_player(name);
         }
-        }.bind(this, e), 300);
-}
-
-HexGrid.prototype._onMouseMove= function(e) {
-
-	if(this._is_mouse_down !== true) return;
-
-	//移動中の点
-	var rect = e.target.getBoundingClientRect();
-	var x = e.clientX - rect.left;
-	var y = e.clientY - rect.top;
-	//var moving_pos = [x / this.scale , y / this.scale];
-	var moving_pos = [x  , y  ];
-
-
-	//移動する前との増分
-	var d_pos = this.ex_pos?
-		math.subtract(moving_pos, this.ex_pos):
-		[0, 0];
-	this.ex_pos = moving_pos;
-
-	//canvasの始点を平行移動
-	this.translate = math.add(this.translate, d_pos);
-
-	//範囲制限
-	this.translate[0] = Math.min(this.translate_max[0], this.translate[0]);
-	this.translate[1] = Math.min(this.translate_max[1], this.translate[1]);
-	this.translate[0] = Math.max(this.translate_min[0], this.translate[0]);
-	this.translate[1] = Math.max(this.translate_min[1], this.translate[1]);
-}
-
-HexGrid.prototype._onTouchStart = function(e){
-
-    //マルチタッチ
-    if(e.targetTouches.length > 1){
-        this._is_multitouch = true;
-
-        //マルチタッチ感の距離を保存（ズーム用）
-        var x = e.targetTouches[0].clientX - e.targetTouches[1].clientX;
-        var y = e.targetTouches[0].clientY - e.targetTouches[1].clientY;
-        // root(x^2 + y^2)は重い処理なので簡略化する
-        x = x < 0 ? -x : x;
-        y = y < 0 ? -y : y;
-        this._ex_touches_length = x + y;
-
-        this._touch_pos = undefined
-        return;
     }
 
-    //シングルタッチ
-    this._is_multitouch = false;
-    this.ex_pos = undefined
-    this._touch_pos = [e.targetTouches[0].clientX, e.targetTouches[0].clientY]
-
-}
-
-HexGrid.prototype._onTouchMove = function(e){
-
-    //マルチタッチ中
-    if(this._is_multitouch == true){
-
-        //前回のマルチタッチと今回のマルチタッチで距離を計算する
-        var x = e.targetTouches[0].clientX - e.targetTouches[1].clientX;
-        var y = e.targetTouches[0].clientY - e.targetTouches[1].clientY;
-        // root(x^2 + y^2)は重い処理なので簡略化する
-        x = x < 0 ? -x : x;
-        y = y < 0 ? -y : y;
-        var touches_length = x + y;
-        this.scale = touches_length / this._ex_touches_length;
-        this.scale = Math.min(this.scale, this.zoom_max);
-	    this.scale = Math.max(this.scale, this.zoom_min);
-
-    }
-    //シングルタッチ中 : 平行移動
-    else{
-
-	    //移動中の点
-	    var rect = e.target.getBoundingClientRect();
-        var x = e.targetTouches[0].clientX - rect.left;
-        var y = e.targetTouches[0].clientY - rect.top;
-        var moving_pos = [x / this.scale , y / this.scale];
-
-
-        //移動する前との増分
-        var d_pos = this.ex_pos?
-            math.subtract(moving_pos, this.ex_pos):
-            [0, 0];
-        this.ex_pos = moving_pos;
-
-        print("d_pos = " + d_pos);
-
-        //canvasの始点を平行移動
-        this.translate = math.add(this.translate, d_pos);
-
-        //範囲制限
-        this.translate[0] = Math.min(this.translate_max[0], this.translate[0]);
-        this.translate[1] = Math.min(this.translate_max[1], this.translate[1]);
-        this.translate[0] = Math.max(this.translate_min[0], this.translate[0]);
-        this.translate[1] = Math.max(this.translate_min[1], this.translate[1]);
-    }
-}
-
-HexGrid.prototype._onTouchEnd = function(e){
-
-    //マルチタッチ判定
-    if(this._is_multitouch == true){
-        return;
-    }
-
-
-    //ダブルタッチ判定
-    var up_time = new Date().getTime(); //タッチエンド時の時刻
-    if((up_time - this._ex_up_time) < 300 ){
-        clearTimeout(this._timer_single_touch);
-
-        //マウスイベント用のダブルクリック関数を呼ぶ
-        e.clientX = e.changedTouches[0].clientX;
-        e.clientY = e.changedTouches[0].clientY;
-        this._onDoubleClick(e);
-        return;
-    }
-    this._ex_up_time = up_time;
-
-    //シングルクタッチ判定
-    //setTimeoutでダブルタッチ判定を待つ
-    this._timer_single_touch= setTimeout(function(e){
-        var x = this._touch_pos[0] - e.changedTouches[0].clientX;
-        var y = this._touch_pos[1] - e.changedTouches[0].clientY;
-        x = x < 0 ? -x : x;
-        y = y < 0 ? -y : y;
-        //mouse downとup時の距離がヘックスの一辺(と係数)より短ければシングルクリック
-        //計算量削減のため距離の計算はルートを取らない
-        if(this.length * 0.5 > (x + y)){
-            hex_grid_menu.toggle_menu();
-        }
-        }.bind(this, e), 300);
-
-}
-
-//dbclickが上手く発火しないのでmousedownでハンドリングして呼び出す
-//touch/mouse共用
-HexGrid.prototype._onDoubleClick = function(e){
-
-  //Client座標を標準座標に
-  var norm_pos = this._clientToNorm(e);
-  norm_pos = [norm_pos[0], norm_pos[1], 1];
-
-  //標準座標からクリックされたヘックスの格納空間の座標を計算する
-  var index = this._normToIndex(norm_pos);
-  var hex = this.hexagons[index[0]][index[1]];
-
-  HexGridMessage.open("test", "empty");
-
-
-
-}
-
-//TODO: スケーリング後に平行移動の制限範囲まで平行移動すると描写領域に何も映らなくなる
-//スケーリング後に制限範囲も変更する
-HexGrid.prototype._scaling = function(e) {
-
-	//マウスホイール増分
-	var d_wheel = e.wheelDelta / 360;
-	this.scale += d_wheel;
-	this.scale = Math.min(this.scale, this.zoom_max);
-	this.scale = Math.max(this.scale, this.zoom_min);
-	this.translate_min = [-this.width + this.canvas.width / this.scale,
-	                       -this.height + this.canvas.height / this.scale];
-	print("scale, width, height : " + this.scale + "," + this.translate_min[0]+ "," + this.translate_min[0]);
-
+    // 描写領域をアップデート
+    this.stage.update();
 }
 
 //Client座標を標準空間に座標変換して取得
@@ -554,34 +315,28 @@ HexGrid.prototype.getGridFromEvent = function(e){
 
 }
 
-//描写
-//TODO:指定範囲だけ描写できるようにする
-HexGrid.prototype.render = function(start_index, end_index) {
+HexGrid.prototype.func_scale = function(isPlus){
 
-    //30fps
-    var now = new Date().getTime();
-    if( (now - this._last_time_rendered) < this._fps){
-        clearTimeout(this._render_timer);
-    }
+    var old_scale = this.scale;
+    if (isPlus)
+        this.scale += 0.1;
+    else
+        this.scale -= 0.1;
 
-    this._render_timer  = setTimeout(function(){
-        //再描写
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.context.save();
-        this.context.scale(this.scale, this.scale);
-        this.context.translate(this.translate[0], this.translate[1]);
+    print("func_scale " + this.scale);
+    this.world.scaleX = this.scale;
+    this.world.scaleY = this.scale;
 
-        for (var i = 0; i < this.hexagons.length; i++) {
-            for (var j = 0; j < this.hexagons[i].length; j++) {
-                if (this.hexagons[i][j] !== undefined) {
-                    this.hexagons[i][j].render(this.context, this.half_len, this.delta_v, true);
-                }
-            }
-        }
+    // 現在の中心座標　＝　コンテナの平行移動　＋　画面内の平行移動(コンテナの平行移動+canvas_x[y]/2*scale)
+    // コンテナの平行移動分をスケーリング
+    this.world.regX -= (this.canvas_width/2) * (old_scale - this.scale)
+    this.world.regY -= (this.canvas_height/2) * (old_scale - this.scale);
 
-        this.context.restore();
+    print(this.world.x + " " + this.world.y);
 
-        //描写した時刻更新
-        this._last_time_rendered = new Date().getTime();
-	}.bind(this), this._fps);
+
+
+
+    this.stage.update();
 }
+
