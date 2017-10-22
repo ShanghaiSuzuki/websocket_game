@@ -20,7 +20,7 @@ function Hex(hex_id, pos_x, pos_y, stage, container, radius) {
 
 
 	//グリッド空間の座標
-	this._hex_id = hex_id;
+	this.hex_id = hex_id;
 
 	// ワールド空間の座標
 	this._pos_x = pos_x;
@@ -95,16 +95,11 @@ Hex.prototype.set_status = function(visibility){
             break;
 
         default:
-            print("Error: 未定義の地形. [" + this._hex_id[0] + ", " + this._hex_id[1] + "]");
+            print("Error: 未定義の地形. [" + this.hex_id[0] + ", " + this.hex_id[1] + "]");
     }
     // 不可視領域への変更なら在中プレイヤーを削除
-    if(!status){
-    /*
-        while (this._players.length != 0){
-            delete this._players[this._players.length - 1];
-        }
-    */
-    }
+    if(!status)
+        this.remove_player();
 }
 
 // ヘックスに在中プレイヤーを追加
@@ -135,16 +130,32 @@ Hex.prototype.remove_player = function(name, player_info){
     }
 }
 
+// Hexを選択状態に
+Hex.prototype.onSelected = function(){
+    this.strokeExStyle = this.strokeCmd.style;
+    this.strokeCmd.style = "rgba(255, 0, 0, 1)";
+    this.container.addChild(this.hex_container);
+    this.stage.update();
+}
+
+// Hexの選択状態を解除
+Hex.prototype.onDeselected = function(){
+
+    this.strokeCmd.style = this.strokeExStyle;
+    this.container.addChild(this.hex_container);
+    this.ex_pos_x = null;
+    this.ex_pos_y = null;
+    this.stage.update();
+
+}
+
 Hex.prototype.onMouseDown = function(e){
 
     e.preventDefault();
     e.stopPropagation();
 
-    // 選択状態ストロークを赤く
-    this.strokeExStyle = this.strokeCmd.style;
-    this.strokeCmd.style = "rgba(255, 0, 0, 1)";
-    this.container.addChild(this.hex_container);
-    this.stage.update();
+    // 選択状態
+    this.onSelected();
 
     // クリック判定用にマウスダウン時の座標を保存
     this.down_stage_x = e.stageX;
@@ -157,16 +168,12 @@ Hex.prototype.onPressUp = function(e){
     e.preventDefault();
     e.stopPropagation();
 
-    // 選択状態解除。ストロークを元の色に
-    this.strokeCmd.style = this.strokeExStyle;
-    this.container.addChild(this.hex_container);
-    this.ex_pos_x = null;
-    this.ex_pos_y = null;
-    this.stage.update();
+    // 選択状態解除
+    this.onDeselected();
 
     // クリック判定 ダウンとアップが指定の範囲内で行われた場合
     if ( Math.abs(this.down_stage_x  - e.stageX) <= click_radius * this.container.scaleX ){
-        var handler = new UIEventHandlerBase(this.stage);
+        var handler = new UIEventHandler.OnClickHex(this.stage, this);
     }
 }
 

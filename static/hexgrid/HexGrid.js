@@ -13,9 +13,9 @@ function HexGrid(socket) {
     // CSSで伸ばしたcanvasはcanvasを引き延ばしただけなので、その高さと幅をDOMのcanvasに再設定する
 	this.canvas_width = $("#field").width();
 	this.canvas_height = $("#field").height();
-    var canvas = document.getElementById("field");
-    canvas.width = this.canvas_width;
-    canvas.height = this.canvas_height;
+    this.canvas = document.getElementById("field");
+    this.canvas.width = this.canvas_width;
+    this.canvas.height = this.canvas_height;
 
 	//canvas上のプレイヤー
 	this.players = {};

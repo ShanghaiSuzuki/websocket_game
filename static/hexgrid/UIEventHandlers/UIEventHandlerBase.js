@@ -1,29 +1,41 @@
+//　ステージの一番上のスタックに新しいコンテナが現れ、入力イベントをフックする
+//  コンテナ挿入の演出もここで書く
+var UIEventHandler = {};
 
-function UIEventHandlerBase(stage){
+UIEventHandler.Base = function(stage){
 
-    //　ステージの一番上のスタックに新しいコンテナが現れ、入力イベントをフックする
-    //  コンテナ挿入の演出もここで書く
     this.stage = stage;
 	this.canvas_width = $("#field").width();
 	this.canvas_height = $("#field").height();
 
+    // UIコンテナを作成
+    // UIEventHandlerBaseを継承したハンドラはここにDisplayObjectを追加する
+    this.UIRootContainer = new createjs.Container();
+
 	// ＵＩ用の矩形領域
-	this.shape = new createjs.Shape();
-    this.fillRectCmd = this.shape.graphics.beginFill("rgba(100, 100, 0, 0.2)").command;
-    this.strokeRectCmd = this.shape.graphics.beginStroke("Gray").command;
-    this.shape.graphics.drawRect(0, 0, this.canvas_width, this.canvas_height);
+	this.UIRect = new createjs.Shape();
+    this.UIRectFillCmd = this.UIRect.graphics.beginFill("rgba(100, 0, 100, 0.5)").command;
+    this.UIRectStrokeCmd = this.UIRect.graphics.beginStroke("Gray").command;
+    this.UIRect.graphics.drawRect(0, 0, this.canvas_width, this.canvas_height);
+    this.UIRootContainer.addChild(this.UIRect);
 
-    // UIコンテナ
-    this.UIEvent_container = new createjs.Container();
-    this.UIEvent_container.addChild(this.shape);
+    // UI用の矩形領域はクリックをフックして抑制する
+    this.UIRect.on("mousedown", function(){});
 
-    this.stage.addChild(this.UIEvent_container);
+    // UIコンテナをステージに追加
+    this.stage.addChild(this.UIRootContainer);
     this.stage.update();
 
+    print("UIHB constructor end");
+    print("this.stage = " + stage);
 
 }
 
-UIEventHandlerBase.init = function(stage){
-
-
+// 削除
+UIEventHandler.Base.prototype.kill = function(){
+    this.stage.removeChild(this.UIRootContainer);
+    delete this.UIRootContainer;
+    this.stage.update();
+    delete this;
 }
+
