@@ -12,6 +12,7 @@ def get_players_by_visibility(visibility, isVisible, hexes = None):
     :return: [{user_name, col, row, icon_id, country_id}]
     """
 
+    print("on get_players_by_visibility")
     logger = logging.getLogger(sys._getframe().f_code.co_name)
     results = None
     try:
@@ -23,10 +24,13 @@ def get_players_by_visibility(visibility, isVisible, hexes = None):
         else:
             where += " = 0 "
         # ヘックスが指定されていれば条件追加
+        print("hexes = ", hexes)
         if hexes is not None:
+            print(hexes)
             where += "and ("
             for hex in hexes:
-                where = where + " (col=" + str(hex[0]) + " and row=", str(hex[1]) + ") or"
+                print("hex = ", hex[0], hex[1])
+                where = where + " (hex_grid.col=" + str(hex[0]) + " and hex_grid.row=" + str(hex[1]) + ") or"
             where = where[:-3]
             where += ");"
 
@@ -38,7 +42,6 @@ def get_players_by_visibility(visibility, isVisible, hexes = None):
 
     except DBError as e:
         logging.error(" message = " + e.message)
-        raise Exception("可視権による可視プレイヤーの取得失敗")
         return False
 
     result = []

@@ -5,6 +5,7 @@ DBのdivisionテーブル（部隊）を操作
 from lib.DB.DBSingleton import *
 import logging
 
+
 def get_division_info(division_id):
     """
     部隊の情報を取得する
@@ -28,6 +29,34 @@ def get_division_info(division_id):
                            "level", # 練度
                            "quantity", # 規模
                            table="division", where="division_id = \"" + str(division_id) + "\"")
+
+    except DBError as e:
+        logging.error(e.message)
+        raise Exception("部隊の情報取得に失敗")
+        return False
+
+    if len(result) == 0:
+        return False
+
+    return result[0]
+
+
+def get_division_info_by_colrow(col, row):
+    try:
+        db = DBSingleton()
+        result = db.select("division_id", # 部隊ID
+                           "division_name", # 部隊名
+                           "col", # 座標
+                           "row", # 座標
+                           "branch_id", # 兵科ID
+                           "user_id", # 所有ユーザー
+                           "country_id", # 所属国
+                           "status", # 状態
+                           "food", # 食糧
+                           "money", # 資金
+                           "level", # 練度
+                           "quantity", # 規模
+                           table="division", where="col="+str(col)+" and row="+str(row))
 
     except DBError as e:
         logging.error(e.message)

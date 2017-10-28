@@ -207,6 +207,35 @@ def update_visible_area(visibility, division_id, switch):
     return True
 
 
+def get_hexinfo(col, row):
+    """
+    :param col: hex_gridのcol
+    :param row: hex_gridのrow
+    :return:
+    """
+    try:
+        db = DBSingleton()
+        result = db.select("col", "row",
+                           "type",
+                           "country_id",
+                           "soldier",
+                           "food",
+                           "money",
+                           "visibility_0",
+                           "visibility_1",
+                           table="hex_grid", where="col=" + str(col) + " and row = " + str(row))
+        if len(result) == 0:
+            return None
+        else:
+            return result[0]
+
+    except DBError as e:
+        logging.error(e.message, detailed_error.get_error())
+        return None
+    except Exception as e:
+        logging.error(e, detailed_error.get_error())
+        return None
+
 # 単体テスト用
 if __name__ == "__main__":
 

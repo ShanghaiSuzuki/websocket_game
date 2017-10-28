@@ -82,6 +82,7 @@ HexGrid.prototype.init = function(data)
 
     //　ステージにヘックスグリッドを追加
     this.stage = new createjs.Stage("field");
+    createjs.Touch.enable(this.stage); // タッチ対応
     this.world = new createjs.Container();
     this.world.scaleX = this.scale;
     this.world.scaleY = this.scale;

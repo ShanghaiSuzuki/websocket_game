@@ -5,7 +5,7 @@ DBのbranchテーブル(兵科)を操作
 import logging
 from lib.DB.DBSingleton import DBSingleton, DBError
 
-def get_branch_info(branch_id):
+def get_branch_info(branch_id, where = None):
     """
     branch_idから兵科情報を取得
     :param branch_id: 兵科ID
@@ -14,6 +14,10 @@ def get_branch_info(branch_id):
 
     result = None
     try:
+
+        if where is None:
+            where = "branch_id = \"" + str(branch_id) + "\""
+
         db = DBSingleton()
         result = db.select("branch_id",
                            "branch_name",
@@ -39,7 +43,7 @@ def get_branch_info(branch_id):
                            "liver", # 川移動補正
                            "plain", # 平地移動補正
                            "capital", # 首都移動補正
-                           table="branch", where="branch_id = \"" + str(branch_id) + "\"")
+                           table="branch", where=where)
 
     except DBError as e:
         logging.error(e.message)
@@ -52,6 +56,18 @@ def get_branch_info(branch_id):
         return False
 
     return result[0]
+
+
+def convert_branchid_to_name(branch_id):
+
+    if branch_id == "infantry":
+        return "歩兵"
+    elif branch_id == "heavy_inf":
+        return "重兵"
+    elif branch_id == "cavalry":
+        return "騎兵"
+    else:
+        return "不明"
 
 if __name__ == "__main__":
     print(get_branch_info("infantry"))

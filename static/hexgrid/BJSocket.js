@@ -95,9 +95,17 @@ BJSocket.prototype.send = function(event_name, event_data){
 //イベントの種類とハンドラを束縛、登録
 BJSocket.prototype.bindHandler = function(event_name, handler){
 
+    // 既に登録済みなら古い方を削除
+    this.unbindHandler(event_name);
+
 	this.handlers[event_name] = this.handlers[event_name] || [];
 	this.handlers[event_name].push(handler);
-	//return this;
+}
+
+// イベントをアンバインド
+BJSocket.prototype.unbindHandler = function(event_name){
+    if (event_name in this.handlers)
+        delete this.handlers[event_name];
 }
 
 //サーバーから送信されたイベントのディスパッチャ

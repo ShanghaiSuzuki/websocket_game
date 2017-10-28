@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime as dt
 from lib.DB.DBSingleton import *
+from lib.TornadoHandlers.BJSocketHandler import *
 
 def update_bbs_country(_cls, _self, data):
 
@@ -14,7 +15,7 @@ def update_bbs_country(_cls, _self, data):
         user_id = _self.get_secure_cookie("user_id").decode('utf-8')
         db = DBSingleton()
         country = db.select("country_id", table="user", where="user_id=" + "\""+str(user_id) + "\"")
-        country = country[0][0]
+        country = country[0]["country_id"]
         query = "select user.user_name, user.icon_id, bbs_country.date, bbs_country.article from user " \
                 "inner join bbs_country "\
                 "on user.user_id=bbs_country.user_id "\
@@ -33,7 +34,8 @@ def update_bbs_country(_cls, _self, data):
 
     #送信するデータ組み立て
     payload["data"] = send_data
-    _cls.send_country(payload, country)
+    print(payload)
+    _cls.send_member_by_country(payload, country)
 
 
 def write_bbs_country(_cls, _self, data):
@@ -45,11 +47,11 @@ def write_bbs_country(_cls, _self, data):
         user_id = _self.get_secure_cookie("user_id").decode('utf-8')
         db = DBSingleton()
         country = db.select("country_id", table="user", where="user_id=" + "\""+str(user_id) + "\"")
-        country = country[0][0]
+        country = country[0]
         data = data.replace("\n", "<br>")
         db.insert(table="bbs_country",
                   user_id=str(user_id),
-                  country_id=country,
+                  country_id=str(country["country_id"]),
                   article=str(data))
 
     except DBError as e:

@@ -92,7 +92,7 @@ BBSCountry.prototype.addArticle = function(data){
 //書き込み
 BBSCountry.prototype.write = function(message){
 
-    this.socket.send("write_bbs_country", message);
+    socket.send("write_bbs_country", message);
     HexGridMessage.open("送信しました", "反映されるまでお待ちください")
     $("#write_box").val("");
 

@@ -1,6 +1,7 @@
 //　ステージの一番上のスタックに新しいコンテナが現れ、入力イベントをフックする
 //  コンテナ挿入の演出もここで書く
-var UIEventHandler = {};
+var UIEventHandler = {
+};
 
 UIEventHandler.Base = function(stage){
 
@@ -12,30 +13,29 @@ UIEventHandler.Base = function(stage){
     // UIEventHandlerBaseを継承したハンドラはここにDisplayObjectを追加する
     this.UIRootContainer = new createjs.Container();
 
-	// ＵＩ用の矩形領域
+    // UIコンテナをステージに追加
+    this.stage.addChild(this.UIRootContainer);
+
+    // UI用の矩形が画面を覆い、下のレイヤーへのインプットを抑制
 	this.UIRect = new createjs.Shape();
     this.UIRectFillCmd = this.UIRect.graphics.beginFill("rgba(100, 0, 100, 0.5)").command;
     this.UIRectStrokeCmd = this.UIRect.graphics.beginStroke("Gray").command;
     this.UIRect.graphics.drawRect(0, 0, this.canvas_width, this.canvas_height);
     this.UIRootContainer.addChild(this.UIRect);
-
-    // UI用の矩形領域はクリックをフックして抑制する
     this.UIRect.on("mousedown", function(){});
 
-    // UIコンテナをステージに追加
-    this.stage.addChild(this.UIRootContainer);
     this.stage.update();
-
-    print("UIHB constructor end");
-    print("this.stage = " + stage);
-
 }
 
-// 削除
-UIEventHandler.Base.prototype.kill = function(){
-    this.stage.removeChild(this.UIRootContainer);
-    delete this.UIRootContainer;
-    this.stage.update();
-    delete this;
+UIEventHandler.Base.prototype = {
+
+    // 削除
+    kill : function(){
+
+        this.stage.removeChild(this.UIRootContainer);
+        delete this.UIRootContainer;
+        this.stage.update();
+        delete this;
+    }
 }
 

@@ -2,11 +2,11 @@ import tornado.escape
 import tornado.websocket
 import logging
 
-from lib.TornadoHandlers.BJSocketHandler.echo import echo
 from lib.TornadoHandlers.BJSocketHandler.move import *
 from lib.TornadoHandlers.BJSocketHandler.init_hexgrid import *
-from lib.TornadoHandlers.BJSocketHandler.init_bbs_country import *
 from lib.TornadoHandlers.BJSocketHandler.update_bbs_country import *
+from lib.TornadoHandlers.BJSocketHandler.init_bbs_country import *
+from lib.TornadoHandlers.BJSocketHandler.request_hexinfo import *
 from lib.DB import player_controller
 
 
@@ -19,12 +19,12 @@ class BJSocketHandler(tornado.websocket.WebSocketHandler):
     members = {}
 
     # 個別のハンドラを登録
-    handlers = {"echo" : echo,
-                "move_query" : move_query,
+    handlers = {"move_query" : move_query,
                 "move_request" : move_request,
-                "init_hexgrid" : init_hexgrid,
+                "init_hexgrid" : init_hexgrid.init_hexgrid,
                 "init_bbs_country" : init_bbs_country,
-                "write_bbs_country" : write_bbs_country}
+                "write_bbs_country" : write_bbs_country,
+                "request_hexinfo" : request_hexinfo}
 
     def open(self):
         #TODO: トークン付与
@@ -165,13 +165,13 @@ class BJSocketHandler(tornado.websocket.WebSocketHandler):
 
             try:
                 #ハンドリング
+                print(content["event"])
                 BJSocketHandler.handlers[content["event"]](BJSocketHandler, self, content["data"])
 
             except Exception as e:
                 payload = tornado.escape.json_encode(
                 { "event": "error", "data" : u"クライアントから送られてきたイベントのハンドラが無かったため、処理出来なかった。 " + content["event"]})
-                print(e)
-                self.write_message(payload)
+                self.send_error(payload)
                 self.close()
 
         #ハンドラがなければエラー

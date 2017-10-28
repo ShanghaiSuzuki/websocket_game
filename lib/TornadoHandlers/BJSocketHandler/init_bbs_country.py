@@ -1,6 +1,5 @@
-import logging
-from datetime import datetime as dt
 from lib.DB.DBSingleton import *
+
 
 def init_bbs_country(_cls, _self, data):
 
@@ -36,16 +35,3 @@ def init_bbs_country(_cls, _self, data):
     payload["data"] = data
     _self.send_you(payload)
 
-if __name__ == "__main__":
-
-        db = DBSingleton()
-        country = 0
-        query = "select user.user_name, user.icon_id, bbs_country.date, bbs_country.article from user " \
-                "inner join bbs_country "\
-                "on user.user_id=bbs_country.user_id "\
-                "where bbs_country.country_id = " + str(country) + \
-                " order by bbs_country.date limit 20;"
-        result = db.exec(query, True)
-
-        print(result[0][2])
-        print(result[0][2].strftime("%Y-%m-%d %H:%M:%S"))
