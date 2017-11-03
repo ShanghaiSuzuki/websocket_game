@@ -29,8 +29,7 @@ def get_players_by_visibility(visibility, isVisible, hexes = None):
             print(hexes)
             where += "and ("
             for hex in hexes:
-                print("hex = ", hex[0], hex[1])
-                where = where + " (hex_grid.col=" + str(hex[0]) + " and hex_grid.row=" + str(hex[1]) + ") or"
+                where = where + " (hex_grid.col=" + str(hex["col"]) + " and hex_grid.row=" + str(hex["row"]) + ") or"
             where = where[:-3]
             where += ");"
 

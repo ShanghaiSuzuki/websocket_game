@@ -105,11 +105,10 @@ Hex.prototype.set_status = function(visibility){
 // ヘックスに在中プレイヤーを追加
 Hex.prototype.add_player = function(player_info){
 
-    print("add player");
     this._player = player_info;
 
     var img = new Image();
-    img.src = player_info["icon"];
+    img.src =  "static/resource/icon/" + player_info["icon_id"] +".jpeg"
     img.onload = function(){
         print("img onload");
         this.bitmap = new createjs.Bitmap(img);
@@ -154,7 +153,7 @@ Hex.prototype.onMouseDown = function(e){
     e.preventDefault();
     e.stopPropagation();
 
-    // 選択状態
+    // 選択状態True
     this.onSelected();
 
     // クリック判定用にマウスダウン時の座標を保存
@@ -173,7 +172,7 @@ Hex.prototype.onPressUp = function(e){
 
     // クリック判定 ダウンとアップが指定の範囲内で行われた場合
     if ( Math.abs(this.down_stage_x  - e.stageX) <= click_radius * this.container.scaleX ){
-        var handler = new UIEventHandler.OnClickHex(this.stage, this);
+        var handler = new UIEventHandler.onClickHex(this.stage, this);
     }
 }
 

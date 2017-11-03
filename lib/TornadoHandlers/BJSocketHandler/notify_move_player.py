@@ -22,19 +22,20 @@ def notify_move_player(moving_player_info, visibility, time):
         visible_area = hexgrid_controller.get_visible_area(visibility, time)
         data["visible_area"] = []
         for hex in visible_area:
-            data["visible_area"].append([hex["col"], hex["row"], hex["type"]])
+            data["visible_area"].append({ "col" : hex["col"], "row" : hex["row"], "type" : hex["type"]})
 
         # 新しい不可視領域のヘックスの情報
         unvisible_area = hexgrid_controller.get_unvisible_area(visibility,time)
         data["unvisible_area"] = []
         for hex in unvisible_area:
-            data["unvisible_area"].append([hex["col"], hex["row"], hex["type"]])
+            data["unvisible_area"].append({ "col" : hex["col"], "row" : hex["row"], "type" : hex["type"]})
+
 
         # 移動したプレイヤーの情報
         data["moving_player"] = moving_player_info
 
         # 新しい可視領域に現れたプレイヤー
-        data["new_players"] = player_controller.get_players_by_visibility(visibility, True, data["unvisible_area"])
+        data["new_players"] = player_controller.get_players_by_visibility(visibility, True, data["visible_area"])
 
         # 可視権を持つオンラインのプレイヤーに送信
         payload["data"] = data

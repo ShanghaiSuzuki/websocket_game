@@ -17,12 +17,11 @@ def get_terrian_info(terrian_type):
     try:
         db = DBSingleton()
         result = db.select("terrian_type",
-                           "availability", # 進入可能性
                            "infantry", # 歩兵移動補正
                            "heavy_inf", # 重歩兵移動補正
                            "cavalry", # 騎兵移動補正
                            "engineer", # 工兵移動補正
-                          table="terrian", where="terrian_type \"" + str(terrian_type) + "\"")
+                          table="terrian", where="terrian_type = \"" + str(terrian_type) + "\"")
 
     except DBError as e:
         logging.error(e.message)

@@ -194,58 +194,56 @@ HexGrid.prototype.update = function(data){
 
     // 移動したプレイヤーがいる場合
     if ("moving_player" in data){
-        print("     moving_player exist")
+
+        // 元のヘックスから削除
         ex_col = data["moving_player"]["ex_col"];
         ex_row = data["moving_player"]["ex_row"];
-        this.hexagons[ex_col][ex_row].remove_player(data["moving_player"]["user_id"]);
+        var index = this._gridToIndex([ex_col, ex_row]);
+        this.hexagons[index[0]][index[1]].remove_player(data["moving_player"]["user_id"]);
+
+        // 新しいヘックスに追加
         new_col = data["moving_player"]["new_col"];
         new_row = data["moving_player"]["new_row"];
-        this.hexagons[new_col][new_row].add_player(data["moving_player"]["user_id"]);
+        var index = this._gridToIndex([new_col, new_row]);
+        this.hexagons[index[0]][index[1]].add_player(data["moving_player"]);
     }
 
     //可視になった領域を読み込み
     if ("visible_area" in data){
-        print("     visible_area exist")
-        for(var i=0; i<data["visible_area"].length; i++){
-            var index = this._gridToIndex([data["visible_area"][i][0], data["visible_area"][i][1]]);
-            this.hexagons[index[0]][index[1]].change_type(data["visible_area"][i][2]);
+        data["visible_area"].forEach(function(hex){
+            var index = this._gridToIndex([hex["col"], hex["row"]]);
+            this.hexagons[index[0]][index[1]].change_type(hex["type"]);
             this.hexagons[index[0]][index[1]].set_status(true);
-        }
+        }.bind(this));
     }
 
     //不可視になった領域を読み込み
     if ("unvisible_area" in data){
-        print("     unvisible_area exist")
-        for(var i=0; i<data["unvisible_area"].length; i++){
-            var index = this._gridToIndex([data["unvisible_area"][i][0], data["unvisible_area"][i][1]]);
-            this.hexagons[index[0]][index[1]].change_type(data["unvisible_area"][i][2]);
-            this.hexagons[index[0]][index[1]].set_status(false);
-        }
+        data["unvisible_area"].forEach(function(hex){
+            var index = this._gridToIndex([hex["col"], hex["row"]]);
+            var target = this.hexagons[index[0]][index[1]];
+            target.change_type(hex["type"]);
+            target.set_status(false);
+        }.bind(this));
     }
 
     // 新しく現れたプレイヤーを読み込み
     if ("new_players" in data){
-        print("     new_players exist")
-        for(var i=0; i<data["new_players"].length; i++){
-            var name = data["new_players"][i][0];
-            this.players[name] = {}
-            this.players[name]["name"] = name;
-            this.players[name]["index"] = this._gridToIndex([data["new_players"][i][1], data["new_players"][i][2]]);
-            this.players[name]["country"] = data["new_players"][i][4];
-            this.players[name]["icon"] = "static/resource/icon/" + data["new_players"][i][3] +".jpeg"
-            this.hexagons[this.players[name]["index"][0]][this.players[name]["index"][1]].add_player(this.players[name]);
-        }
+
+        data["new_players"].forEach(function(new_player){
+            var index = this._gridToIndex([new_player["col"], new_player["row"]]);
+            this.hexagons[index[0]][index[1]].add_player(new_player);
+        }.bind(this));
     }
 
     // 不可視になったプレイヤーを読み込み、削除
     if ("removed_players" in data){
-        print("     removed_player exist")
-        for(var i=0; i<data["removed_players"].length; i++){
-            name = data["removed_players"][i][0]
-            col = data["removed_players"][i][1];
-            row = data["removed_players"][i][2];
-            this.hexagons[col][row].remove_player(name);
-        }
+
+        data["removed_players"].forEach(function(removed_player){
+            var index = this._gridToIndex([removed_player["col"], remove_player["row"]]);
+            var name = removed_player["user_name"];
+            this.hexagons[index[0]][index[1]].removed_player_player(name);
+        }.bind(this));
     }
 
     // 描写領域をアップデート

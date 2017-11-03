@@ -128,30 +128,59 @@ UIElementHelper.Table.prototype = {
 }
 
 // メッセージボックス作成
-UIElementHelper.MessageBox = function(container, width, height){
+UIElementHelper.MessageBox = function(p_container, width, height){
+
+    this.width = width;
+    this.height = height;
 
     // テキストコンテナ
     this.container = new createjs.Container();
-    this.UIRootContainer.addChild(this.TextContainer);
+    p_container.addChild(this.container);
 
     // 矩形
-    var text_height = this.canvas_height * 1/3;
-    this.text_shape = new createjs.Shape();
-    this.text_shape.graphics.beginFill("rgba(255, 255, 255, 1)");
-    this.text_shape.graphics.beginStroke("Black").command;
-    this.text_shape.graphics.drawRect(0,0, width, height);
-    this.container.addChild(this.text_shape);
+    this.text_rect_shape = new createjs.Shape();
+    var g = this.text_rect_shape.graphics;
+    this.cmdFill = g.beginFill("rgba(255, 255, 255, 1)").command;
+    this.cmdStroke = g.beginStroke("Black").command;
+    this.cmdDrawRect= g.drawRect(0,0, width, height).command;
+    this.container.addChild(this.text_rect_shape);
 
     // テキスト
-    this.Text = new createjs.Text();
-    this.TextContainer.addChild(this.Text);
+    this.Text = new createjs.Text("", "20px sans-serif", "Black");
+    this.container.addChild(this.Text);
+
 }
 
 UIElementHelper.MessageBox.prototype = {
 
-    // テキストをセット
+    // テキストをセット、矩形をリサイズ
     setText : function(text){
-        this.Text.text = text;
+
+        // テキストを指定されたピクセル幅で折り返して生成
+        var textArray = text.split('');
+        var lines = [];
+        this.Text.text = "";
+        var prevText = "";
+
+        for(var i=0; i<textArray.length; i++){
+
+            this.Text.text += textArray[i];
+            print("in loop t.getmeswi = "  + this.Text.getMeasuredWidth() );
+            if (this.Text.getMeasuredWidth() > this.width){
+                lines.push(prevText);
+                this.Text.text = textArray[i];
+            }
+
+            prevText = this.Text.text;
+        }
+        lines.push(this.Text.text);
+        this.Text.text = lines.join('\n');
+
+        // 矩形リサイズ
+        // TODO : getMesuredHeight() > this.heightならthis.heightに合わせてスクロールバー付ける
+        this.cmdDrawRect.w = this.width;
+        this.cmdDrawRect.h = this.height;
+
     }
 }
 

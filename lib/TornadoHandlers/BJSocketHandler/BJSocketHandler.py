@@ -19,8 +19,8 @@ class BJSocketHandler(tornado.websocket.WebSocketHandler):
     members = {}
 
     # 個別のハンドラを登録
-    handlers = {"move_query" : move_query,
-                "move_request" : move_request,
+    handlers = {"ask_move" : ask_move,
+                "request_move" : request_move,
                 "init_hexgrid" : init_hexgrid.init_hexgrid,
                 "init_bbs_country" : init_bbs_country,
                 "write_bbs_country" : write_bbs_country,
@@ -99,6 +99,7 @@ class BJSocketHandler(tornado.websocket.WebSocketHandler):
         :return:
         """
         payload = tornado.escape.json_encode(raw_dict_data)
+        print("in send_you payload is ", payload)
         self.write_message(payload)
 
     @classmethod

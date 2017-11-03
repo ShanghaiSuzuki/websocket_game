@@ -1,6 +1,6 @@
-
-OnClickHex: {
-    UIEventHandler.OnClickHex = function(stage, hex){
+// ヘックスクリック時のハンドラ
+onClickHex: {
+    UIEventHandler.onClickHex = function(stage, hex){
 
         // 親のコンストラクタ呼び出し
         UIEventHandler.Base.call(this, stage);
@@ -27,7 +27,7 @@ OnClickHex: {
         hexinfoBtn.on("pressup", function(){
 
             // サーバにこのhexの情報を要求
-            socket.bindHandler("response_hexinfo", UIEventHandler.OnResponseHexInfo.bind(this, this.stage, this.hex));
+            socket.bindHandler("response_hexinfo", UIEventHandler.onResponseHexInfo.bind(this, this.stage, this.hex));
             socket.send("request_hexinfo", {"col" : this.hex.hex_id[0], "row" : this.hex.hex_id[1]});
 
             // UI削除
@@ -35,22 +35,36 @@ OnClickHex: {
 
         }.bind(this));
 
+        // 進軍問い合わせボタン
+        var moveBtn = UIElementHelper.createBotton("進軍調査");
+        this.btnList.addBtn(moveBtn);
+        moveBtn.on("pressup", function(){
+
+            // サーバに進軍可能か問い合わせ
+            socket.bindHandler("response_ask_move", UIEventHandler.onResponseAskMove.bind(this, this.stage, this.hex));
+            socket.send("ask_move", {"col" : this.hex.hex_id[0], "row" : this.hex.hex_id[1]});
+
+            // UI削除
+            this.kill();
+        }.bind(this));
+
         stage.update();
     }
-    // 継承
-    UIEventHandler.OnClickHex.prototype = Object.create(UIEventHandler.Base.prototype, {value: {constructor: UIEventHandler.OnClickHex}});
 
-    var p = UIEventHandler.OnClickHex.prototype;
+    // 継承
+    UIEventHandler.onClickHex.prototype = Object.create(UIEventHandler.Base.prototype, {value: {constructor: UIEventHandler.onClickHex}});
+
+    var p = UIEventHandler.onClickHex.prototype;
     p.kill = function(){
         this.hex.onDeselected();
         UIEventHandler.Base.prototype.kill.call(this);
     }
 }
 
-// サーバーからresponse_hexinfoイベント受信
-OnResponseHexInfo: {
+// 情報クリック時のハンドラ(サーバからのイベントで呼び出し）
+onResponseHexInfo: {
 
-    UIEventHandler.OnResponseHexInfo = function(stage, hex, data){
+    UIEventHandler.onResponseHexInfo = function(stage, hex, data){
 
         // 親のコンストラクタ呼び出し
         UIEventHandler.Base.call(this, stage);
@@ -82,13 +96,13 @@ OnResponseHexInfo: {
         // 土地ボタン
         var terrianBtnContainer = UIElementHelper.createBotton("土地情報");
         this.btnList.addBtn(terrianBtnContainer);
-        terrianBtnContainer.on("pressup", UIEventHandler.OnResponseHexInfo.prototype.showTerrianInfo.bind(this));
+        terrianBtnContainer.on("pressup", UIEventHandler.onResponseHexInfo.prototype.showTerrianInfo.bind(this));
 
         // プレイヤーボタン
         if ("player_info" in data){
             var playerBtnContainer = UIElementHelper.createBotton("プレイヤー情報");
             this.btnList.addBtn(playerBtnContainer);
-            playerBtnContainer.on("pressup", UIEventHandler.OnResponseHexInfo.prototype.showPlayerInfo.bind(this));
+            playerBtnContainer.on("pressup", UIEventHandler.onResponseHexInfo.prototype.showPlayerInfo.bind(this));
         }
 
         // 部隊ボタン
@@ -96,14 +110,15 @@ OnResponseHexInfo: {
             print("has division_info");
             var divisionBtnContainer = UIElementHelper.createBotton("部隊情報");
             this.btnList.addBtn(divisionBtnContainer);
-            divisionBtnContainer.on("pressup", UIEventHandler.OnResponseHexInfo.prototype.showDivisionInfo.bind(this));
+            divisionBtnContainer.on("pressup", UIEventHandler.onResponseHexInfo.prototype.showDivisionInfo.bind(this));
         }
+
         // 最初は土地情報を表示
-        UIEventHandler.OnResponseHexInfo.prototype.showTerrianInfo.bind(this)();
+        UIEventHandler.onResponseHexInfo.prototype.showTerrianInfo.bind(this)();
         this.stage.update();
     }
 
-    var p = UIEventHandler.OnResponseHexInfo.prototype;
+    var p = UIEventHandler.onResponseHexInfo.prototype;
 
     // 削除
     p.kill = function(){
@@ -201,4 +216,115 @@ OnResponseHexInfo: {
     }
 }
 
+// 進軍調査クリック時のハンドラ（サーバイベントで呼び出し）
+onResponseAskMove: {
+    UIEventHandler.onResponseAskMove = function(stage, hex, data){
 
+        // 親のコンストラクタ呼び出し
+        UIEventHandler.Base.call(this, stage);
+
+        // 受信したデータを保持
+        this.data = data;
+
+        // ヘックスを選択状態に
+        this.hex = hex;
+        hex.onSelected();
+
+        // ボタンのリスト
+        this.btnList = new UIElementHelper.BottonList(this.UIRootContainer);
+
+        // キャンセルボタン追加
+        var cancelBtnContainer = UIElementHelper.createBotton("キャンセル");
+        this.btnList.addBtn(cancelBtnContainer);
+        cancelBtnContainer.on("pressup", function(){
+            this.kill();
+        }.bind(this));
+
+        // 進軍不可の時
+        if (data["response"] == "deny"){
+            this.messageBox =  new UIElementHelper.MessageBox(this.UIRootContainer, 200, 200);
+            this.messageBox.setText(data["reason"]);
+            this.messageBox.container.x = ($("#field").width() - this.messageBox.width)/2;
+            this.messageBox.container.y = ($("#field").height() - this.messageBox.height)/2;
+            this.stage.update();
+        }
+
+        // 進軍可能な時
+        else if(data["response"] == "accept"){
+
+            print("accept");
+
+            // 進軍ボタン追加
+            var moveBtnContainer = UIElementHelper.createBotton("進軍");
+            this.btnList.addBtn(moveBtnContainer);
+            moveBtnContainer.on("pressup", function(){
+
+                // サーバに進軍リクエストを送信
+                socket.bindHandler("response_request_move", UIEventHandler.createOnResponseRequestMove.bind(this, this.stage));
+                socket.send("request_move", {"col" : this.hex.hex_id[0], "row" : this.hex.hex_id[1]});
+
+                // ヘックスの選択状態解除
+                this.hex.onDeselected();
+
+                // UI削除
+                this.kill();
+
+            }.bind(this));
+
+            // 所要時間など表示
+            this.table = new UIElementHelper.Table(this.UIRootContainer);
+            this.table.addRecord("所要時間", data["required_time"] / 3600 + "分");
+            this.table.addRecord("消費食糧", data["food"]);
+            this.table.addRecord("消費資金", data["money"]);
+
+            // テーブル内部のオフセットを計算して位置調整
+            this.table.calc();
+            this.table.container.x = ($("#field").width() - this.table.width)/2;
+            this.table.container.y = ($("#field").height() - this.table.height)/2;
+
+            this.stage.update();
+        }
+    }
+
+
+    var p = UIEventHandler.onResponseHexInfo.prototype;
+
+    p.kill = function(){
+        this.hex.onDeselected();
+        UIEventHandler.Base.prototype.kill.call(this);
+    }
+
+}
+
+OnResponseRequestMove: {
+
+    UIEventHandler.createOnResponseRequestMove = function(stage, data){
+        var ui = new UIEventHandler.onResponseRequestMove(stage, data);
+    }
+
+    UIEventHandler.onResponseRequestMove = function(stage, data){
+
+        // 親のコンストラクタ呼び出し
+        UIEventHandler.Base.call(this, stage);
+
+        // ボタンのリスト
+        this.btnList = new UIElementHelper.BottonList(this.UIRootContainer);
+
+        // okボタン追加
+        var okBtnContainer = UIElementHelper.createBotton("OK");
+        this.btnList.addBtn(okBtnContainer);
+
+        this.temp = "nyan";
+        okBtnContainer.on("pressup", function(){
+            this.kill();
+        }.bind(this));
+    }
+
+    // 継承
+    UIEventHandler.onResponseRequestMove.prototype = Object.create(UIEventHandler.Base.prototype, {value: {constructor: UIEventHandler.onResponseRequestMove}});
+    var p = UIEventHandler.onResponseRequestMove.prototype;
+
+    p.kill = function(){
+        UIEventHandler.Base.prototype.kill.call(this);
+    }
+ }

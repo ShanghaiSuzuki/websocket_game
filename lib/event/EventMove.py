@@ -2,7 +2,7 @@ from lib.DB.DBSingleton import DBSingleton, DBError
 from lib.TornadoHandlers.BJSocketHandler import BJSocketHandler
 from lib.DB import event_controller, player_controller, hexgrid_controller, division_controller
 from lib.util import BJTime
-from lib.TornadoHandlers.BJSocketHandler import notify_move_player
+from lib.TornadoHandlers.BJSocketHandler.notify_move_player import notify_move_player
 from datetime import datetime
 import logging
 
@@ -32,6 +32,9 @@ class EventMove():
         self._logger.debug("event_record=", self._event_record)
 
 
+        # 例外処理用
+        user_id = None
+        division_id = None
         try:
             # デコード
             if self._decode_recode() is False:
@@ -40,12 +43,13 @@ class EventMove():
 
             # プレイヤー情報
             player = player_controller.get_playerinfo_by_id(self._user_id)
-            moving_player_info = { "id" : player["user_id"],
+            user_id = player["user_id"]
+            moving_player_info = { "user_id" : player["user_id"],
                                    "ex_col" : player["col"],
                                    "ex_row" : player["row"],
                                    "new_col" : self._dest_col,
                                    "new_row" : self._dest_row,
-                                   "icon" : player["icon"]}
+                                   "icon" : player["icon_id"]}
 
             # 移動中でないならキャンセル(本来はイベントレコード自体がキャンセルされるべき
             if player["status"] != "moving":
@@ -67,6 +71,9 @@ class EventMove():
             # 現在時刻
             now = BJTime.get_time_now()
 
+            """
+            移動先に敵がいれば戦闘に入る
+            """
             # 移動前の可視領域減算
             if not hexgrid_controller.update_visible_area(visibility = player["visibility"],
                                                           division_id = division["division_id"],
@@ -92,7 +99,7 @@ class EventMove():
 
 
             # 可視範囲を共有する通信中のプレイヤー(移動するプレイヤーも含む）にプレイヤーの移動を通知
-            notify_move_player.notify_update_hexgrid(moving_player_info, player["visibility"], now)
+            notify_move_player(moving_player_info, player["visibility"], now)
 
         except DBError as e:
             logging.error("EventMove::run: caught DBError: " + e.message)
@@ -100,15 +107,14 @@ class EventMove():
         except Exception as e:
 
             # 状態を初期化しておく
-            player_controller.update_user_status("ready")
-            division_controller.update_division_status("ready")
+            player_controller.update_user_status(user_id, "ready")
+            division_controller.update_division_status(division_id, "ready")
 
             logging.error(e)
 
             # プレイヤーにエラーを通知
-            message = "行軍キャンセル : "
             payload = { "event" : "error",
-                        "data" : { "message" : message}}
+                        "data" : { "message" : "進軍はキャンセルされた"}}
             BJSocketHandler.send_player(self._user_id, payload)
 
     def _decode_recode(self):

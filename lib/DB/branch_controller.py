@@ -58,16 +58,3 @@ def get_branch_info(branch_id, where = None):
     return result[0]
 
 
-def convert_branchid_to_name(branch_id):
-
-    if branch_id == "infantry":
-        return "歩兵"
-    elif branch_id == "heavy_inf":
-        return "重兵"
-    elif branch_id == "cavalry":
-        return "騎兵"
-    else:
-        return "不明"
-
-if __name__ == "__main__":
-    print(get_branch_info("infantry"))
