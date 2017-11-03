@@ -64,6 +64,9 @@ onClickHex: {
 // 情報クリック時のハンドラ(サーバからのイベントで呼び出し）
 onResponseHexInfo: {
 
+    UIEventHandler.createOnResponseHexInfo = function(stage, hex, data){
+    }
+
     UIEventHandler.onResponseHexInfo = function(stage, hex, data){
 
         // 親のコンストラクタ呼び出し
@@ -314,7 +317,15 @@ OnResponseRequestMove: {
         var okBtnContainer = UIElementHelper.createBotton("OK");
         this.btnList.addBtn(okBtnContainer);
 
-        this.temp = "nyan";
+        // 到着時刻表示
+        this.messageBox =  new UIElementHelper.MessageBox(this.UIRootContainer, 200, 200);
+        var _message = "進軍を開始した。\n到着時刻 : ";
+        this.messageBox.setText(_message + data["arrival_time"]);
+        this.messageBox.container.x = ($("#field").width() - this.messageBox.width)/2;
+        this.messageBox.container.y = ($("#field").height() - this.messageBox.height)/2;
+        this.stage.update();
+
+        this.stage.update();
         okBtnContainer.on("pressup", function(){
             this.kill();
         }.bind(this));

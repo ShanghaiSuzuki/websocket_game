@@ -3,7 +3,6 @@ from lib.TornadoHandlers.BJSocketHandler import BJSocketHandler
 from lib.DB import event_controller, player_controller, hexgrid_controller, division_controller
 from lib.util import BJTime
 from lib.TornadoHandlers.BJSocketHandler.notify_move_player import notify_move_player
-from datetime import datetime
 import logging
 
 
@@ -53,7 +52,7 @@ class EventMove():
 
             # 移動中でないならキャンセル(本来はイベントレコード自体がキャンセルされるべき
             if player["status"] != "moving":
-                raise Exception("プレイヤーの状態がreadyではない")
+                raise Exception("プレイヤーの状態がmovingではない")
                 return
 
             # 部隊情報
@@ -61,7 +60,7 @@ class EventMove():
 
             # 移動中でないならキャンセル(本来はイベントレコード自体がキャンセルされるべき）
             if division["status"] != "moving":
-                raise Exception("部隊の状態がreadyではない")
+                raise Exception("部隊の状態がmovingではない")
                 return
 
             # エラーに備えて本処理前にプレイヤーと部隊の状態を初期化する
@@ -72,7 +71,24 @@ class EventMove():
             now = BJTime.get_time_now()
 
             """
-            移動先に敵がいれば戦闘に入る
+            移動先に既に他の部隊がいる場合
+            """
+            division_dest = division_controller.get_division_info_by_colrow(self._dest_col, self._dest_row)
+            if division_dest:
+
+                # 味方なら移動キャンセルイベント
+                if division_dest["country_id"] == player["country_id"]:
+                    data = { "event" : "cancel", "data" : { "reason" : "移動先に味方の部隊がいるため、移動はキャンセルされた"}}
+                    BJSocketHandler.BJSocketHandler.send_member_by_id(player["user_id"],data)
+                    return
+
+                # 敵なら戦闘開始
+                if division_dest["country_id"] != player["country_id"]:
+                    return
+
+
+            """
+            移動
             """
             # 移動前の可視領域減算
             if not hexgrid_controller.update_visible_area(visibility = player["visibility"],
@@ -115,7 +131,7 @@ class EventMove():
             # プレイヤーにエラーを通知
             payload = { "event" : "error",
                         "data" : { "message" : "進軍はキャンセルされた"}}
-            BJSocketHandler.send_player(self._user_id, payload)
+            BJSocketHandler.send_member_by_id(self._user_id, payload)
 
     def _decode_recode(self):
         """

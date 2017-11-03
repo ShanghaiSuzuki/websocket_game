@@ -5,6 +5,7 @@ function Hex(hex_id, pos_x, pos_y, stage, container, radius) {
 
     this.stage = stage;
     this.container = container;
+    this.radius = radius;
 
     // shapeを作成してステージに追加
     this.shape = new createjs.Shape();

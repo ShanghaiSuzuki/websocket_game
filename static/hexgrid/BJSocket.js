@@ -127,20 +127,23 @@ BJSocket.prototype.dispatch = function(event_name, message){
 //onload
 $(function(){
 
+    print("run bjtimer");
+
     //socket初期化
     //socket = new BJSocket("ws://127.0.0.1:8000/bjsocket", function(message){
+    var start_socket_init = new Date();
 	socket = new BJSocket("ws://192.168.11.2:8000/bjsocket", function(message){
 	    var messages = $("#text_box").val();
 		$("#text_box").val(message + "\n" + messages);
 	});
 	socket.init();
+	print("socket init time : " + (new Date() - start_socket_init));
+
 
     //HexGrid初期化
+    var start_hex_grid_init = new Date();
     hex_grid = new HexGrid(socket);
-
-    //HexGridのメニュー初期化
-    hex_grid_menu = new HexGridMenu();
-    hex_grid_menu.init();
+	print("hex_grid constructor time : " + (new Date() - start_hex_grid_init));
 
     //メッセージポップアップの初期化
     HexGridMessage.init();
@@ -151,12 +154,20 @@ $(function(){
     //サーバーから送られてくるエラーのハンドラ
     socket.bindHandler("error", function(message){
         HexGridMessage.open("サーバーエラー", message + "<br>画面を更新して再起動して下さい。")
-    })
+    });
 
     //サーバーから送られてくるシステムメッセージのハンドラ
     socket.bindHandler("system", function(message){
         text_callback("システム: " + message)
-    })
+    });
 
+     //サーバーから送られてくるキャンセルのハンドラ
+    socket.bindHandler("cancel", function(message){
+        UIEventHandler.createOnCancel(message);
+    });
+
+    //サーバにリクエストを送信しヘックスグリッドの初期化開始
+
+	socket.send("init_hexgrid", {});
 
 });

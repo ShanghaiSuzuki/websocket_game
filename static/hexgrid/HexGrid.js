@@ -17,9 +17,6 @@ function HexGrid(socket) {
     this.canvas.width = this.canvas_width;
     this.canvas.height = this.canvas_height;
 
-	//canvas上のプレイヤー
-	this.players = {};
-
 	//自身の情報
 	this._self_info = [];
 
@@ -56,22 +53,21 @@ function HexGrid(socket) {
 	this.translate_max = [0, 0];
 
 	//ソケット
-	this.socket = socket;
+	socket = socket;
 
 	//initはwebsocketのハンドラとして起動する
-	this.socket.bindHandler("init_hexgrid", this.init.bind(this));
+	socket.bindHandler("init_hexgrid", this.init.bind(this));
 
 	//更新用のハンドラ
-    this.socket.bindHandler("update_hexgrid", this.update.bind(this));
-
-    //サーバにリクエストを送信し初期化開始
-	this.socket.send("init_hexgrid", {});
+    socket.bindHandler("update_hexgrid", this.update.bind(this));
 
 }
 
 
 HexGrid.prototype.init = function(data)
 {
+    var start_init = new Date();
+
     //フィールドの広さを定義する三つの変数
 	this.width = data["width"];
 	this.height = data["height"];
@@ -87,6 +83,15 @@ HexGrid.prototype.init = function(data)
     this.world.scaleX = this.scale;
     this.world.scaleY = this.scale;
     this.stage.addChild(this.world);
+    print("at create stage " + (new Date() - start_init));
+
+    /*
+    // tick開始
+    createjs.Ticker.addEventListener("tick", function(){
+        print("this.width = " + this.width);
+        this.stage.update();
+    }.bind(this));
+    */
 
     // ステージに＋-のスケールボタンを追加
     var btn_radius = this.canvas_width * 0.03;
@@ -98,6 +103,7 @@ HexGrid.prototype.init = function(data)
     this.btn_plus_scale.on("click", function(e){e.stopPropagation(); this.func_scale(true);}, this);
     this.stage.addChild(this.btn_minus_scale);
     this.stage.addChild(this.btn_plus_scale);
+    print("at create scale " + (new Date() - start_init));
 
 	// ヘックスの大きさの定義
 	this.half_len = this.length / 2; // 正六角形の一辺の長さの半分
@@ -141,6 +147,8 @@ HexGrid.prototype.init = function(data)
 		this.hexagons[i] = new Array(num_hex_h);
 	}
 
+    print("at ready array" + (new Date() - start_init));
+
 	//グリッド生成
 	var x = x_offset;
 	var col = 0;
@@ -174,6 +182,8 @@ HexGrid.prototype.init = function(data)
 
 	}
 
+    print("at create hexes" + (new Date() - start_init));
+
     //自身の情報を設定
     this._self_info["name"] = data["name"];
     this._self_info["col"] = data["col"];
@@ -183,13 +193,13 @@ HexGrid.prototype.init = function(data)
     //描写情報更新
     this.update(data);
 
-    print("HexGrid初期化完了");
-
+    print("HexGrid初期化完了" + (new Date() - start_init));
 
 }
 //ヘックスグリッドが更新された時のハンドラ
 HexGrid.prototype.update = function(data){
 
+    var start_update = new Date();
     print("in HexGrid.update");
 
     // 移動したプレイヤーがいる場合
@@ -207,15 +217,18 @@ HexGrid.prototype.update = function(data){
         var index = this._gridToIndex([new_col, new_row]);
         this.hexagons[index[0]][index[1]].add_player(data["moving_player"]);
     }
+    print("after moving_player " + (new Date() - start_update));
 
     //可視になった領域を読み込み
     if ("visible_area" in data){
         data["visible_area"].forEach(function(hex){
             var index = this._gridToIndex([hex["col"], hex["row"]]);
+
             this.hexagons[index[0]][index[1]].change_type(hex["type"]);
             this.hexagons[index[0]][index[1]].set_status(true);
         }.bind(this));
     }
+    print("after visible_area" + (new Date() - start_update));
 
     //不可視になった領域を読み込み
     if ("unvisible_area" in data){
@@ -226,6 +239,7 @@ HexGrid.prototype.update = function(data){
             target.set_status(false);
         }.bind(this));
     }
+    print("after unvisible_area" + (new Date() - start_update));
 
     // 新しく現れたプレイヤーを読み込み
     if ("new_players" in data){
@@ -235,6 +249,7 @@ HexGrid.prototype.update = function(data){
             this.hexagons[index[0]][index[1]].add_player(new_player);
         }.bind(this));
     }
+    print("after new_players" + (new Date() - start_update));
 
     // 不可視になったプレイヤーを読み込み、削除
     if ("removed_players" in data){
@@ -245,6 +260,7 @@ HexGrid.prototype.update = function(data){
             this.hexagons[index[0]][index[1]].removed_player_player(name);
         }.bind(this));
     }
+
 
     // 描写領域をアップデート
     this.stage.update();
