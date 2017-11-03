@@ -23,13 +23,15 @@ UIEventHandler.Base = function(stage){
     // UIコンテナをステージに追加
     this.stage.addChild(this.UIRootContainer);
 
-    // UI用の矩形が画面を覆い
+    // UI用の矩形が画面を覆い、mousedownでUI消去
 	this.UIRect = new createjs.Shape();
     this.UIRectFillCmd = this.UIRect.graphics.beginFill("rgba(100, 0, 100, 0.5)").command;
     this.UIRectStrokeCmd = this.UIRect.graphics.beginStroke("Gray").command;
     this.UIRect.graphics.drawRect(0, 0, this.canvas_width, this.canvas_height);
     this.UIRootContainer.addChild(this.UIRect);
-    this.UIRect.on("mousedown", function(){});
+    this.UIRect.on("mousedown", function(){
+        this.kill();
+    }.bind(this));
 
     this.stage.update();
 }

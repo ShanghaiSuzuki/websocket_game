@@ -12,15 +12,6 @@ onClickHex: {
         // ボタンのリスト
         this.btnList = new UIElementHelper.BottonList(this.UIRootContainer);
 
-        // キャンセルボタン
-        var cancelBtnContainer = UIElementHelper.createBotton("キャンセル");
-        this.btnList.addBtn(cancelBtnContainer);
-        cancelBtnContainer.on("pressup", function(){
-            // UI削除
-            this.hex.onDeselected();
-            this.kill();
-        }.bind(this));
-
         // 情報ボタン
         var hexinfoBtn = UIElementHelper.createBotton("情報");
         this.btnList.addBtn(hexinfoBtn);
@@ -81,20 +72,6 @@ onResponseHexInfo: {
         // ヘックスを選択状態に
         this.hex = hex;
         hex.onSelected();
-
-        // キャンセルボタン
-        var cancelBtnContainer = UIElementHelper.createBotton("キャンセル");
-        this.btnList.addBtn(cancelBtnContainer);
-        cancelBtnContainer.on("pressup", function(){
-
-            // ヘックスの選択状態解除
-            this.hex.onDeselected();
-
-            // UI削除
-            UIEventHandler.Base.prototype.kill.call(this);
-
-        }.bind(this));
-
 
         // 土地ボタン
         var terrianBtnContainer = UIElementHelper.createBotton("土地情報");
@@ -236,13 +213,6 @@ onResponseAskMove: {
         // ボタンのリスト
         this.btnList = new UIElementHelper.BottonList(this.UIRootContainer);
 
-        // キャンセルボタン追加
-        var cancelBtnContainer = UIElementHelper.createBotton("キャンセル");
-        this.btnList.addBtn(cancelBtnContainer);
-        cancelBtnContainer.on("pressup", function(){
-            this.kill();
-        }.bind(this));
-
         // 進軍不可の時
         if (data["response"] == "deny"){
             this.messageBox =  new UIElementHelper.MessageBox(this.UIRootContainer, 200, 200);
@@ -309,13 +279,6 @@ OnResponseRequestMove: {
 
         // 親のコンストラクタ呼び出し
         UIEventHandler.Base.call(this, stage);
-
-        // ボタンのリスト
-        this.btnList = new UIElementHelper.BottonList(this.UIRootContainer);
-
-        // okボタン追加
-        var okBtnContainer = UIElementHelper.createBotton("OK");
-        this.btnList.addBtn(okBtnContainer);
 
         // 到着時刻表示
         this.messageBox =  new UIElementHelper.MessageBox(this.UIRootContainer, 200, 200);

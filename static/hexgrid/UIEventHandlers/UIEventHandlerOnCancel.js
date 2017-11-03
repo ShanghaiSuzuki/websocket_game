@@ -10,17 +10,6 @@ onCancel : {
         // 親のコンストラクタ呼び出し
         UIEventHandler.Base.call(this, hex_grid.stage);
 
-        // ボタンのリスト
-        this.btnList = new UIElementHelper.BottonList(this.UIRootContainer);
-
-        // OKボタン
-        var cancelBtnContainer = UIElementHelper.createBotton("OK");
-        this.btnList.addBtn(cancelBtnContainer);
-        cancelBtnContainer.on("pressup", function(){
-            // UI削除
-            this.kill();
-        }.bind(this));
-
         // メッセージ表示
         this.messageBox =  new UIElementHelper.MessageBox(this.UIRootContainer, 200, 200);
         this.messageBox.setText(message["reason"]);
