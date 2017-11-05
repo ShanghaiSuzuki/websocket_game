@@ -10,6 +10,8 @@ from lib.DB.DBSingleton import *
 from lib.DB import event_controller
 from lib.event.EventBase import EventBase
 from lib.event.EventMove import EventMove
+from lib.event.EventDomestic import EventDomestic
+from lib.event.Sched import SchedDomestic
 from lib.util import detailed_error
 from lib.util import BJTime
 from lib.affairs.affair_test import AffairTest
@@ -69,6 +71,8 @@ class GameMain:
         cls._game_settings= {"affair": affair,
                              "map": map}
 
+
+
         print("status: ", status)
         if status[0]["status"] != "ongoing":
             cls.__start_new_year()
@@ -89,13 +93,14 @@ class GameMain:
         # イベントループ本体
         while True:
 
+            time.sleep(0.1)
+
             # 待機中のイベントがなければスキップ
             if cls._current_event_timestamp is None:
-                time.sleep(1)
                 continue
 
-            # 現在の時刻と最速のイベント時間
-            if cls._current_event_timestamp >= BJTime.get_time_now():
+            # 最速のイベントの実行時間が過ぎていれば実行
+            if cls._current_event_timestamp <= BJTime.get_time_now():
 
                 # 予定時間が一番早いイベントをDBから参照
                 current_event_record = event_controller.peek_event()
@@ -104,10 +109,17 @@ class GameMain:
                 if current_event_record is None:
                     continue
 
+                # イベントレコードを削除
+                event_controller.remove_event(current_event_record["event_id"])
+
                 # イベントディスパッチ処理
                 event = None
                 if current_event_record["event_name"] == "move":
                     event = EventMove(current_event_record)
+                elif current_event_record["event_name"] == "domestic":
+                    event = EventDomestic(current_event_record)
+                elif current_event_record["event_name"] == "sched_domestic":
+                    event = SchedDomestic.SchedEventDomestic(current_event_record)
 
                 try:
                     event.run()
@@ -116,21 +128,13 @@ class GameMain:
                 except Exception as e:
                     cls._logger.error(e, detailed_error.get_error())
 
-                # イベントレコードを削除
-                event_controller.remove_event(current_event_record["event_id"])
-
                 # 次に待機しているイベントがあれば予定時間をセット
                 next_event_record = event_controller.peek_event()
                 print("next_event_record=", next_event_record)
                 if next_event_record is not None:
-                    cls.set_event_timestamp(next_event_record["datetime"])
+                    cls._current_event_timestamp = next_event_record["datetime"]
                 else:
                     cls.set_event_timestamp(None)
-
-            else:
-                time.sleep(1)
-
-
 
         cls._logger.info("loop() ended")
 
@@ -154,7 +158,7 @@ class GameMain:
                 cls._current_event_timestamp = event_timestamp
 
             # メインエンジンにセットされているイベントの予定時刻よりも、新しいイベントの予定時刻が早い場合
-            elif cls._current_event_timestamp < event_timestamp:
+            elif cls._current_event_timestamp > event_timestamp:
                 cls._current_event_timestamp = event_timestamp
 
     @classmethod
@@ -166,6 +170,15 @@ class GameMain:
 
         # マップ作製
         cls._game_settings["map"].init()
+
+        # TODO : この位置で開始させると他のイベントが入るまでcurrent_event_timeがNoneでループ回らない
+        # 内政イベントチェーン開始
+        from lib.event.Sched.SchedDomestic import SchedEventDomestic
+        from lib.DB import event_controller
+        next_time = BJTime.add_time(BJTime.get_time_now(), 1000*10)
+        event = SchedEventDomestic.create_recode(next_time) # 10秒後に開始
+        event_controller.add_event(event)
+        GameMain.set_event_timestamp(next_time)
 
     @classmethod
     def get_affair(cls):

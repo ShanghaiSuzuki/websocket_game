@@ -39,6 +39,19 @@ onClickHex: {
             this.kill();
         }.bind(this));
 
+        // 内政
+        var domesticBtn = UIElementHelper.createBotton("内政調査");
+        this.btnList.addBtn(domesticBtn);
+        domesticBtn.on("pressup", function(){
+
+             // サーバに進軍可能か問い合わせ
+            socket.bindHandler("response_ask_domestic", UIEventHandler.createOnResponseAskDomestic.bind(this, this.stage, this.hex));
+            socket.send("ask_domestic", {"col" : this.hex.hex_id[0], "row" : this.hex.hex_id[1]});
+
+            // UI削除
+            this.kill();
+        }.bind(this));
+
         stage.update();
     }
 
@@ -269,6 +282,7 @@ onResponseAskMove: {
 
 }
 
+// 進軍クリック時のハンドラ
 OnResponseRequestMove: {
 
     UIEventHandler.createOnResponseRequestMove = function(stage, data){
@@ -289,9 +303,6 @@ OnResponseRequestMove: {
         this.stage.update();
 
         this.stage.update();
-        okBtnContainer.on("pressup", function(){
-            this.kill();
-        }.bind(this));
     }
 
     // 継承
@@ -302,3 +313,115 @@ OnResponseRequestMove: {
         UIEventHandler.Base.prototype.kill.call(this);
     }
  }
+
+// 内政調査クリック時のハンドラ（サーバイベントで呼び出し）
+OnResponseAskDomestic: {
+
+    UIEventHandler.createOnResponseAskDomestic = function(stage, hex, data){
+        var ui = new UIEventHandler.onResponseAskDomestic(stage, hex, data);
+    }
+
+    UIEventHandler.onResponseAskDomestic = function(stage, hex, data){
+
+        // 親のコンストラクタ呼び出し
+        UIEventHandler.Base.call(this, stage);
+
+        // ヘックスを選択状態に
+        this.hex = hex;
+        hex.onSelected();
+
+        // 内政不可能な時
+        if (!data["response"]){
+            // 理由表示
+            this.messageBox =  new UIElementHelper.MessageBox(this.UIRootContainer, 200, 200);
+            this.messageBox.setText(data["reason"]);
+            this.messageBox.container.x = ($("#field").width() - this.messageBox.width)/2;
+            this.messageBox.container.y = ($("#field").height() - this.messageBox.height)/2;
+            this.stage.update();
+            return
+        }
+        // 内政可能な時
+        else if (data["response"] == true){
+
+             // 所要時間など表示
+            this.table = new UIElementHelper.Table(this.UIRootContainer);
+            this.table.addRecord("所要時間", data["required_time"] / 3600 + "分");
+            this.table.addRecord("内政後の食糧", data["food_result"]);
+            this.table.addRecord("内政後の資金", data["money_result"]);
+
+            // テーブル内部のオフセットを計算して位置調整
+            this.table.calc();
+            this.table.container.x = ($("#field").width() - this.table.width)/2;
+            this.table.container.y = ($("#field").height() - this.table.height)/2;
+
+            // ボタンのリスト
+            this.btnList = new UIElementHelper.BottonList(this.UIRootContainer);
+
+            // 農業ボタン
+            var foodBtn = UIElementHelper.createBotton("農業");
+            this.btnList.addBtn(foodBtn);
+            foodBtn.on("pressup", function(){
+                // サーバに農業開始を要請
+                socket.bindHandler("response_request_domestic", UIEventHandler.onResponseHexInfo.bind(this, this.stage, this.hex));
+                socket.send("request_domestic", {"col" : this.hex.hex_id[0], "row" : this.hex.hex_id[1], "type" : "food"});
+                this.kill();
+            }.bind(this));
+
+             // 商業ボタン
+            var moneyBtn = UIElementHelper.createBotton("商業");
+            this.btnList.addBtn(moneyBtn);
+            moneyBtn.on("pressup", function(){
+                // サーバに商業開始を要請
+                socket.bindHandler("response_request_domestic", UIEventHandler.onResponseHexInfo.bind(this, this.stage, this.hex));
+                socket.send("request_domestic", {"col" : this.hex.hex_id[0], "row" : this.hex.hex_id[1], "type" : "money"});
+                this.kill();
+            }.bind(this));
+            this.stage.update();
+        }
+    }
+
+    // 継承
+    UIEventHandler.onResponseAskDomestic.prototype = Object.create(UIEventHandler.Base.prototype, {value: {constructor: UIEventHandler.onResponseAskDomestic}});
+    var p = UIEventHandler.onResponseAskDomestic.prototype;
+
+    p.kill = function(){
+        this.hex.onDeselected();
+        UIEventHandler.Base.prototype.kill.call(this);
+    }
+ }
+
+// 内政クリック時のハンドラ（サーバイベントで呼び出し）
+OnResponseRequestDomestic : {
+    UIEventHandler.createOnResponseRequestDomestic = function(stage, data){
+        var ui = new UIEventHandler.onResponseRequestDomestic(stage, data);
+    }
+
+    UIEventHandler.onResponseRequestDomestic = function(stage, data){
+
+        // 親のコンストラクタ呼び出し
+        UIEventHandler.Base.call(this, stage);
+
+        // 内政不可能な時
+        if (data["response"] == "deny"){
+            // 理由表示
+            this.messageBox =  new UIElementHelper.MessageBox(this.UIRootContainer, 200, 200);
+            this.messageBox.setText(data["reason"]);
+            this.messageBox.container.x = ($("#field").width() - this.messageBox.width)/2;
+            this.messageBox.container.y = ($("#field").height() - this.messageBox.height)/2;
+            this.stage.update();
+            return
+        }
+        // 内政可能な時
+        else if(data["response"] == "accept"){
+            this.messageBox =  new UIElementHelper.MessageBox(this.UIRootContainer, 200, 200);
+            this.messageBox.setText("内政中");
+            this.messageBox.container.x = ($("#field").width() - this.messageBox.width)/2;
+            this.messageBox.container.y = ($("#field").height() - this.messageBox.height)/2;
+            this.stage.update();
+            return
+        }
+    }
+
+    // 継承
+    UIEventHandler.onResponseRequestDomestic.prototype = Object.create(UIEventHandler.Base.prototype, {value: {constructor: UIEventHandler.onResponseRequestDomestic}});
+}

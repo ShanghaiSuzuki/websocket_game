@@ -32,7 +32,6 @@ def request_hexinfo(_cls, _self, _data):
     data["hex_info"]["type"] = hex_info["type"]
     if hex_info[self_info["visibility"]] > 0:
         # 可視範囲ならより詳細な情報取得
-        data["hex_info"]["soldier"] = hex_info["soldier"]
         data["hex_info"]["food"] = hex_info["food"]
         data["hex_info"]["money"] = hex_info["money"]
 

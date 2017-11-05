@@ -104,6 +104,10 @@ HexGrid.prototype.init = function(data)
     this.stage.addChild(this.btn_minus_scale);
     this.stage.addChild(this.btn_plus_scale);
     print("at create scale " + (new Date() - start_init));
+    this.btn_show_hex_id = new createjs.Shape();
+    this.btn_show_hex_id.graphics.beginFill("Green").drawCircle(btn_radius, btn_radius*5, btn_radius);
+    this.btn_show_hex_id.on("click", function(e){e.stopPropagation(); this.show_hex_id();}, this);
+    this.stage.addChild(this.btn_show_hex_id);
 
 	// ヘックスの大きさの定義
 	this.half_len = this.length / 2; // 正六角形の一辺の長さの半分
@@ -355,3 +359,14 @@ HexGrid.prototype.func_scale = function(isPlus){
     this.stage.update();
 }
 
+HexGrid.prototype.show_hex_id = function(){
+
+    var ct = new Date();
+    for (var i = 0; i < this.hexagons.length; i++){
+        for (var j = 0; j < this.hexagons[i].length; j++){
+            if (this.hexagons[i][j])
+                this.hexagons[i][j].show_id();
+        }
+    }
+    print("end show_hex_id " + (new Date() - ct));
+}

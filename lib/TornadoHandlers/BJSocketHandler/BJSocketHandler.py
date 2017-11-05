@@ -3,6 +3,7 @@ import tornado.websocket
 import logging
 
 from lib.TornadoHandlers.BJSocketHandler.move import *
+from lib.TornadoHandlers.BJSocketHandler.domestic import *
 from lib.TornadoHandlers.BJSocketHandler.init_hexgrid import *
 from lib.TornadoHandlers.BJSocketHandler.update_bbs_country import *
 from lib.TornadoHandlers.BJSocketHandler.init_bbs_country import *
@@ -21,6 +22,8 @@ class BJSocketHandler(tornado.websocket.WebSocketHandler):
     # 個別のハンドラを登録
     handlers = {"ask_move" : ask_move,
                 "request_move" : request_move,
+                "ask_domestic" : ask_domestic,
+                "request_domestic" : request_domestic,
                 "init_hexgrid" : init_hexgrid.init_hexgrid,
                 "init_bbs_country" : init_bbs_country,
                 "write_bbs_country" : write_bbs_country,

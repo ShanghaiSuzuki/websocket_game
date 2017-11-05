@@ -147,6 +147,7 @@ UIElementHelper.MessageBox = function(p_container, width, height){
 
     // テキスト
     this.Text = new createjs.Text("", "20px sans-serif", "Black");
+    this.Text.lineWidth = this.width;
     this.container.addChild(this.Text);
 
 }
@@ -165,7 +166,6 @@ UIElementHelper.MessageBox.prototype = {
         for(var i=0; i<textArray.length; i++){
 
             this.Text.text += textArray[i];
-            print("in loop t.getmeswi = "  + this.Text.getMeasuredWidth() );
             if (this.Text.getMeasuredWidth() > this.width){
                 lines.push(prevText);
                 this.Text.text = textArray[i];

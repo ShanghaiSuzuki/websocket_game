@@ -161,10 +161,15 @@ $(function(){
         text_callback("システム: " + message)
     });
 
-     //サーバーから送られてくるキャンセルのハンドラ
+     //サーバーから送られてくるマップ上のキャンセルのハンドラ
     socket.bindHandler("cancel", function(message){
         UIEventHandler.createOnCancel(message);
     });
+
+    // サーバーから送られてくるマップ上の通知のハンドラ
+    socket.bindHandler("notify", function(message){
+        UIEventHandler.createOnNotify(message);
+    })
 
     //サーバにリクエストを送信しヘックスグリッドの初期化開始
 

@@ -10,6 +10,7 @@ from lib.event.EventMove import EventMove
 from lib.GameMain import GameMain
 import logging
 
+
 def ask_move(_cls, _self, data):
     """進軍可能な進路を問い合わせに対する応答"""
 
@@ -268,9 +269,5 @@ def request_move(_cls, _self, data):
         return
 
     assert False
-
-if __name__ == "__main__":
-
-    print("")
 
 

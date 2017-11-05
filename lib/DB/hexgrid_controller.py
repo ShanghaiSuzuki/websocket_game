@@ -218,7 +218,6 @@ def get_hexinfo(col, row):
         result = db.select("col", "row",
                            "type",
                            "country_id",
-                           "soldier",
                            "food",
                            "money",
                            "visibility_0",
@@ -235,6 +234,32 @@ def get_hexinfo(col, row):
     except Exception as e:
         logging.error(e, detailed_error.get_error())
         return None
+
+def update_hex(col, row, **kargs):
+    """
+    ヘックスのレコードを更新
+    :param col: 該当ヘックスcol
+    :param row: 該当ヘックスrow
+    :param kargs: {key : value, ...}
+    :return: 成功 ? True : False
+    """
+
+    try:
+        db = DBSingleton()
+
+        sentence = "update hex_grid set"
+
+        for key, value in kargs.items():
+           sentence = sentence + " " + str(key) + " = \"" + str(value)  + "\""
+
+        sentence += " where col = " + str(col) + " and row = " + str(row)
+
+        db.exec(sentence)
+        return True
+
+    except DBError as e:
+        logging.error(e.message, detailed_error.get_error())
+        return False
 
 # 単体テスト用
 if __name__ == "__main__":

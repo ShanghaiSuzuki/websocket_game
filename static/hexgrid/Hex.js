@@ -7,18 +7,16 @@ function Hex(hex_id, pos_x, pos_y, stage, container, radius) {
     this.container = container;
     this.radius = radius;
 
-    // shapeを作成してステージに追加
+    // ヘックスを作成
     this.shape = new createjs.Shape();
     this.fillCmd = this.shape.graphics.beginFill("Black").command;
     this.strokeCmd = this.shape.graphics.beginStroke("Gray").command;
     this.shape.graphics.drawPolyStar(pos_x, pos_y, radius, 6, 0, 0);
 
-    // BitmapとShapeのためのContainer
+    // Containerに登録
     this.hex_container = new createjs.Container();
-    this.hex_container.addChild(this.shape);
-
+    this.hex_container.addChild(this.shape, this.text_hex);
     this.container.addChild(this.hex_container);
-
 
 	//グリッド空間の座標
 	this.hex_id = hex_id;
@@ -27,17 +25,11 @@ function Hex(hex_id, pos_x, pos_y, stage, container, radius) {
 	this._pos_x = pos_x;
 	this._pos_y = pos_y;
 
-    //地形
-    this._type = "UNKNOWN";
-
     //不可視/不可視
     this._visibility = false;
 
     //在中のプレイヤー
     this._player = {}
-
-	//色設定
-	this._fillColorStack = [["UNKNOWN",  [100, 100, 100, 1]]];
 
 	// イベント登録
 	this.shape.addEventListener("mousedown", this.onMouseDown.bind(this));
@@ -101,6 +93,17 @@ Hex.prototype.set_status = function(visibility){
     // 不可視領域への変更なら在中プレイヤーを削除
     if(!status)
         this.remove_player();
+}
+
+// ヘックスの座標を表示
+Hex.prototype.show_id = function(){
+
+    if (!this.text){
+        this.text = new createjs.Text(this.hex_id[0] + ", " + this.hex_id[1], this.radius/2+"px sans-serif", "Black");
+        this.text.x = this._pos_x;
+        this.text.y = this._pos_y;
+    }
+    this.hex_container.addChild(this.text);
 }
 
 // ヘックスに在中プレイヤーを追加
