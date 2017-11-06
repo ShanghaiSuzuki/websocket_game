@@ -113,6 +113,7 @@ def update_division_status(division_id, status):
     except DBError as e:
         return False
 
+
 def move_division(division_id, dest_col, dest_row):
     """
     部隊を移動させる
@@ -134,10 +135,23 @@ def move_division(division_id, dest_col, dest_row):
         return False
 
 
-
-if __name__ == "__main__":
-    print(get_division_info(1))
+def update_division(division_id, **kwargs):
+    """
+    部隊の情報更新
+    :param division_id:
+    :param kwargs:
+    :return: 成功 ? True : False
+    """
     try:
-        get_division_info("invalid")
-    except:
-        print("ok")
+        db = DBSingleton()
+
+        sentence = "update division set "
+        for key, value in kwargs.items():
+            sentence = sentence + key + " = \"" + str(value) + "\","
+        sentence = sentence[:-1]
+        sentence + " where division_id = \"" + str(division_id) + "\""
+        db.exec(sentence)
+        return True
+
+    except DBError as e:
+        return False

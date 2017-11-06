@@ -10,7 +10,8 @@ function Hex(hex_id, pos_x, pos_y, stage, container, radius) {
     // ヘックスを作成
     this.shape = new createjs.Shape();
     this.fillCmd = this.shape.graphics.beginFill("Black").command;
-    this.strokeCmd = this.shape.graphics.beginStroke("Gray").command;
+    this.strokeCmd = this.shape.graphics.beginStroke("rgba(100, 100, 100, 0)").command;
+    this.shape.graphics.setStrokeStyle(3);
     this.shape.graphics.drawPolyStar(pos_x, pos_y, radius, 6, 0, 0);
 
     // Containerに登録
@@ -28,8 +29,7 @@ function Hex(hex_id, pos_x, pos_y, stage, container, radius) {
     //不可視/不可視
     this._visibility = false;
 
-    //在中のプレイヤー
-    this._player = {}
+    this._player = null
 
 	// イベント登録
 	this.shape.addEventListener("mousedown", this.onMouseDown.bind(this));
@@ -95,12 +95,24 @@ Hex.prototype.set_status = function(visibility){
         this.remove_player();
 }
 
+// 領地
+Hex.prototype.set_own = function(isOwn){
+    if(isOwn)
+        this.strokeCmd.style = "rgba(0, 255, 0, 1)";
+    else
+        this.strokeCmd.style = "Gray";
+
+    this.container.addChild(this.hex_container);
+
+    this.stage.update();
+}
+
 // ヘックスの座標を表示
 Hex.prototype.show_id = function(){
 
     if (!this.text){
-        this.text = new createjs.Text(this.hex_id[0] + ", " + this.hex_id[1], this.radius/2+"px sans-serif", "Black");
-        this.text.x = this._pos_x;
+        this.text = new createjs.Text(this.hex_id[0] + ", " + this.hex_id[1], this.radius/3+"px sans-serif", "Black");
+        this.text.x = this._pos_x - this.radius/2;
         this.text.y = this._pos_y;
     }
     this.hex_container.addChild(this.text);
@@ -128,7 +140,8 @@ Hex.prototype.remove_player = function(name, player_info){
         // 画像アンロード
         this.hex_container.removeChild(this.bitmap);
         delete this.bitmap;
-        delete this_player;
+        delete this._player;
+        this._player = null;
         this.stage.update();
     }
 }

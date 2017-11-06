@@ -59,6 +59,12 @@ def init_hexgrid(_cls, _self, data):
 
         data["new_players"] = payload_players
 
+        # 領地の情報
+        own_area = get_own_area(player["country_id"])
+        data["own_area"] = []
+        for hex in own_area:
+            data["own_area"].append(hex)
+
         # 可視範囲のヘックスの情報
         visible_area = get_visible_area(player["visibility"])
         data["visible_area"] = []

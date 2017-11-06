@@ -30,6 +30,9 @@ def notify_move_player(moving_player_info, visibility, time):
         for hex in unvisible_area:
             data["unvisible_area"].append({ "col" : hex["col"], "row" : hex["row"], "type" : hex["type"]})
 
+        # 新しい領地
+        own_area = hexgrid_controller.get_own_area(moving_player_info["country_id"], time)
+        data["own_area"] = [own_area[0]]
 
         # 移動したプレイヤーの情報
         data["moving_player"] = moving_player_info
@@ -40,6 +43,7 @@ def notify_move_player(moving_player_info, visibility, time):
         # 可視権を持つオンラインのプレイヤーに送信
         payload["data"] = data
         BJSocketHandler.BJSocketHandler.send_member_by_visibility(payload, visibility)
+
 
         # TODO: 他国
         # data["new_players"] = []

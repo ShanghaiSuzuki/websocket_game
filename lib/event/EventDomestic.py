@@ -78,26 +78,53 @@ class EventDomestic():
 
             gm = GameMain.GameMain()
             message = "("+str(self._domestic_col)+","+str(self._domestic_row)+")\n " # 結果メッセージ
-            if self._type == "food":
+
+            isSuccessed = False
+
+            # 最大値増量
+            if self._type == "foster_food":
                 new_food = gm.get_affair().get_op_food_lv() + hex["food"]
-                hexgrid_controller.update_hex(hex["col"], hex["row"], food = new_food)
-                message = message + " 農業生産　" + str(hex["food"]) + " → " + str(new_food)
-            elif self._type == "money":
+                if not hexgrid_controller.update_hex(hex["col"], hex["row"], food = new_food):
+                    message = message + "エラー。農業生産失敗"
+                else:
+                    message = message + "農業生産　" + str(hex["food"]) + " → " + str(new_food)
+                    isSuccessed = True
+            elif self._type == "foster_money":
                 new_money = gm.get_affair().get_op_food_lv() + hex["money"]
-                hexgrid_controller.update_hex(hex["col"], hex["row"], money = new_money)
-                message = message + " 農業生産　" + str(hex["money"]) + " → " + str(new_money)
-            else:
+                if not hexgrid_controller.update_hex(hex["col"], hex["row"], money = new_money):
+                    message = message + "エラー。商業生産失敗"
+                else:
+                    message = message + "商業生産　" + str(hex["money"]) + " → " + str(new_money)
+                    isSuccessed = True
+
+            # 徴税
+            elif self._type == "get_food":
+                new_food = hex["food"] + division_info["food"]
+                if not division_controller.update_division(division_info["division_id"], food=new_food):
+                    message = message + "エラー。農業徴税失敗"
+                else:
+                    message = message + "領地から" + str(hex["food"]) + "の食糧を部隊に徴税した"
+                    isSuccessed = True
+            elif self._type == "get_money":
+                new_money = hex["money"] + division_info["money"]
+                if not division_controller.update_division(division_info["division_id"], money=new_money):
+                    message = message + "エラー。商業徴税失敗"
+                else:
+                    message = message + "領地から" + str(hex["money"]) + "の資金を部隊に徴税した"
+                    isSuccessed = True
+
+            # 内政に失敗していればメッセージ送信
+            if not isSuccessed:
                 BJSocketHandler.BJSocketHandler.send_member_by_id(player_info["user_id"],
                                                                   {"event" : "cancel",
-                                                                   "data" : {"title" : "内政キャンセル",
+                                                                   "data" : {"title" : "内政失敗",
                                                                               "reason" : "不明な内政種類"}})
                 return
 
-            # 結果をプレイヤーに通知
-
+            # 内政に成功。結果をプレイヤーに通知
             BJSocketHandler.BJSocketHandler.send_member_by_id(player_info["user_id"],
                                                               {"event" : "notify",
-                                                               "data" : {"title" : "内政終了",
+                                                               "data" : {"title" : "内政成功",
                                                                           "message" : message}})
         except DBError as e:
             logging.error("EventMove::run: caught DBError: " + e.message)

@@ -94,7 +94,7 @@ HexGrid.prototype.init = function(data)
     */
 
     // ステージに＋-のスケールボタンを追加
-    var btn_radius = this.canvas_width * 0.03;
+    var btn_radius = this.canvas_width * 0.05;
     this.btn_minus_scale = new createjs.Shape();
     this.btn_minus_scale.graphics.beginFill("Red").drawCircle(btn_radius, btn_radius, btn_radius);
     this.btn_minus_scale.on("click", function(e){ e.stopPropagation(); this.func_scale(false);}, this);
@@ -243,7 +243,6 @@ HexGrid.prototype.update = function(data){
             target.set_status(false);
         }.bind(this));
     }
-    print("after unvisible_area" + (new Date() - start_update));
 
     // 新しく現れたプレイヤーを読み込み
     if ("new_players" in data){
@@ -265,6 +264,14 @@ HexGrid.prototype.update = function(data){
         }.bind(this));
     }
 
+    // 領土読み込み
+    if ("own_area" in data){
+        data["own_area"].forEach(function(hex){
+            var index = this._gridToIndex([hex["col"], hex["row"]]);
+            var target = this.hexagons[index[0]][index[1]];
+            target.set_own(true);
+        }.bind(this));
+    }
 
     // 描写領域をアップデート
     this.stage.update();

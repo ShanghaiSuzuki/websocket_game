@@ -27,7 +27,7 @@ def get_visible_area(visibility, timestamp=None):
             where += " and timestamp >= \"" + datetime + "\""
 
         db = DBSingleton()
-        result = db.select("col", "row", "type",
+        result = db.select("col", "row", "type", "country_id","food", "money",
                            table="hex_grid",
                            where=where)
 
@@ -235,6 +235,7 @@ def get_hexinfo(col, row):
         logging.error(e, detailed_error.get_error())
         return None
 
+
 def update_hex(col, row, **kargs):
     """
     ヘックスのレコードを更新
@@ -261,13 +262,33 @@ def update_hex(col, row, **kargs):
         logging.error(e.message, detailed_error.get_error())
         return False
 
-# 単体テスト用
-if __name__ == "__main__":
 
-    #print(get_visible_area(2))
-    print("***")
-    #print(get_unvisible_area(2))
-    print("***")
-    #print("get_adjacent_area(2,8,1)")
-    print(get_adjacent_area(5,4,1))
-    print(get_movable_area_by_division_id(1))
+def get_own_area(country_id, timestamp=None):
+    """
+    領地を取得
+    :param country_id:
+    :return: 成功 ? area : None
+    """
+
+    try:
+        db = DBSingleton()
+
+        where = "country_id = " + str(country_id)
+
+        # タイムスタンプによる条件
+        if timestamp is not None:
+            datetime = BJTime.encode_to_sql(timestamp)
+            where += " and timestamp >= \"" + datetime + "\""
+
+        result = db.select("col", "row", "type", "country_id", "food", "money",
+                           table="hex_grid", where=where)
+        if len(result) == 0:
+            return None
+        else:
+            return result
+
+
+    except DBError as e:
+        logging.error(e.message, detailed_error.get_error())
+        return None
+

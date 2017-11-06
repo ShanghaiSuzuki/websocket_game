@@ -259,7 +259,7 @@ onResponseAskMove: {
 
             // 所要時間など表示
             this.table = new UIElementHelper.Table(this.UIRootContainer);
-            this.table.addRecord("所要時間", data["required_time"] / 3600 + "分");
+            this.table.addRecord("所要時間", data["required_time"] / 1000 / 60 + "分");
             this.table.addRecord("消費食糧", data["food"]);
             this.table.addRecord("消費資金", data["money"]);
 
@@ -345,7 +345,7 @@ OnResponseAskDomestic: {
 
              // 所要時間など表示
             this.table = new UIElementHelper.Table(this.UIRootContainer);
-            this.table.addRecord("所要時間", data["required_time"] / 3600 + "分");
+            this.table.addRecord("所要時間", (data["required_time"] / 1000 / 60 )+ "分");
             this.table.addRecord("内政後の食糧", data["food_result"]);
             this.table.addRecord("内政後の資金", data["money_result"]);
 
@@ -357,23 +357,43 @@ OnResponseAskDomestic: {
             // ボタンのリスト
             this.btnList = new UIElementHelper.BottonList(this.UIRootContainer);
 
-            // 農業ボタン
-            var foodBtn = UIElementHelper.createBotton("農業");
+            // 農業生産ボタン
+            var foodBtn = UIElementHelper.createBotton("農業生産");
             this.btnList.addBtn(foodBtn);
             foodBtn.on("pressup", function(){
                 // サーバに農業開始を要請
                 socket.bindHandler("response_request_domestic", UIEventHandler.onResponseHexInfo.bind(this, this.stage, this.hex));
-                socket.send("request_domestic", {"col" : this.hex.hex_id[0], "row" : this.hex.hex_id[1], "type" : "food"});
+                socket.send("request_domestic", {"col" : this.hex.hex_id[0], "row" : this.hex.hex_id[1], "type" : "foster_food"});
                 this.kill();
             }.bind(this));
 
              // 商業ボタン
-            var moneyBtn = UIElementHelper.createBotton("商業");
+            var moneyBtn = UIElementHelper.createBotton("商業生産");
             this.btnList.addBtn(moneyBtn);
             moneyBtn.on("pressup", function(){
                 // サーバに商業開始を要請
                 socket.bindHandler("response_request_domestic", UIEventHandler.onResponseHexInfo.bind(this, this.stage, this.hex));
-                socket.send("request_domestic", {"col" : this.hex.hex_id[0], "row" : this.hex.hex_id[1], "type" : "money"});
+                socket.send("request_domestic", {"col" : this.hex.hex_id[0], "row" : this.hex.hex_id[1], "type" : "foster_money"});
+                this.kill();
+            }.bind(this));
+
+            //　農業徴税ボタン
+            var getFoodBtn = UIElementHelper.createBotton("農業徴税");
+            this.btnList.addBtn(getFoodBtn);
+            getFoodBtn.on("pressup", function(){
+                 // サーバに農業徴税開始を要請
+                socket.bindHandler("response_request_domestic", UIEventHandler.onResponseHexInfo.bind(this, this.stage, this.hex));
+                socket.send("request_domestic", {"col" : this.hex.hex_id[0], "row" : this.hex.hex_id[1], "type" : "get_food"});
+                this.kill();
+            }.bind(this));
+
+            // 商業徴税ボタン
+            var getMoneyBtn = UIElementHelper.createBotton("商業徴税");
+            this.btnList.addBtn(getMoneyBtn);
+            getMoneyBtn.on("pressup", function(){
+                 // サーバに商業徴税開始を要請
+                socket.bindHandler("response_request_domestic", UIEventHandler.onResponseHexInfo.bind(this, this.stage, this.hex));
+                socket.send("request_domestic", {"col" : this.hex.hex_id[0], "row" : this.hex.hex_id[1], "type" : "get_money"});
                 this.kill();
             }.bind(this));
             this.stage.update();

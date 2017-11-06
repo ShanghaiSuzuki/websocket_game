@@ -44,6 +44,7 @@ class EventMove():
             player = player_controller.get_playerinfo_by_id(self._user_id)
             user_id = player["user_id"]
             moving_player_info = { "user_id" : player["user_id"],
+                                   "country_id" : player["country_id"],
                                    "ex_col" : player["col"],
                                    "ex_row" : player["row"],
                                    "new_col" : self._dest_col,
@@ -106,11 +107,16 @@ class EventMove():
                 self._logger.error("プレイヤーの移動に失敗")
                 raise Exception("プレイヤーの移動に失敗")
 
+            # 移動後のヘックスを国の支配下に
+            if not hexgrid_controller.update_hex(self._dest_col, self._dest_row, country_id=player["country_id"]):
+                self._logging.error("移動後の支配に失敗")
+                raise Exception("移動後の支配に失敗")
+
             # 移動後の可視領域可算
             if not hexgrid_controller.update_visible_area(visibility=player["visibility"],
                                                           division_id = division["division_id"],
                                                           switch = True):
-                logging.error("移動後の可視領域可算に失敗")
+                self._logging.error("移動後の可視領域可算に失敗")
                 raise Exception("移動後の可視領域可算に失敗")
 
 
